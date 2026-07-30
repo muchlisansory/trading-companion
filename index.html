@@ -30,8 +30,15 @@
     color:var(--ink);
     -webkit-tap-highlight-color: transparent;
   }
-  .wrap{max-width:620px;margin:0 auto;padding:24px 16px 100px;}
-  header{margin-bottom:22px;}
+  .wrap{max-width:620px;margin:0 auto;padding:0 16px 100px;}
+  header{
+    position:fixed;top:0;left:0;right:0;z-index:95;
+    background:var(--paper);
+    padding:18px 16px 14px;
+    border-bottom:1px solid var(--line);
+    max-width:620px;margin:0 auto;
+  }
+  .header-spacer{height:108px;}
   .eyebrow{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin:0 0 6px;}
   h1{font-size:24px;margin:0 0 4px;letter-spacing:-.01em;font-weight:700;}
   .sub{color:var(--muted);font-size:13px;margin:0;}
@@ -142,8 +149,11 @@
     font-size:20px;cursor:pointer;
   }
   .fab:active{transform:scale(0.94);}
+  .fab-danger{background:var(--danger);}
 
   @media print {
+    header{ position:static !important; }
+    .header-spacer{ display:none !important; }
     .fab{ display:none !important; }
     .tabs, .btn-ghost, .btn-danger-ghost, .entry-del, .footer-line, #journal-form-panel, .lock-notice { display:none !important; }
     body.print-journal #view-checklist, body.print-journal #view-calculator { display:none !important; }
@@ -167,6 +177,7 @@
     <h1>Checklist · Journal · Kalkulator</h1>
     <p class="sub">Satu tempat untuk disiplin proses trading kamu.</p>
   </header>
+  <div class="header-spacer"></div>
 
   <div id="view-checklist"></div>
   <div id="view-journal" style="display:none;"></div>
@@ -175,6 +186,7 @@
   <div class="footer-line">Alat bantu disiplin proses trading — bukan sinyal atau jaminan hasil. Data journal &amp; checklist tersimpan di perangkat kamu.</div>
 </div>
 
+<button class="fab fab-danger" id="fab-reset-checklist" title="Reset Checklist" style="display:none;">↺</button>
 <button class="fab" id="fab-export-journal" title="Simpan Journal sebagai PDF" style="display:none;">⬇</button>
 
 <div class="tabs">
@@ -243,11 +255,15 @@ function showTab(name) {
     document.getElementById("tab-" + t).classList.toggle("active", t === name);
   });
   document.getElementById("fab-export-journal").style.display = (name === "journal") ? "flex" : "none";
+  document.getElementById("fab-reset-checklist").style.display = (name === "checklist") ? "flex" : "none";
 }
 tabs.forEach(t => document.getElementById("tab-" + t).addEventListener("click", () => showTab(t)));
 
 document.getElementById("fab-export-journal").addEventListener("click", () => {
   exportToPDF("journal");
+});
+document.getElementById("fab-reset-checklist").addEventListener("click", () => {
+  resetChecklist();
 });
 
 /* ---------- EXPORT PDF (pakai print dialog bawaan browser) ---------- */
@@ -271,9 +287,7 @@ function renderChecklist() {
   const riskTotal = RISK_SECTIONS.reduce((s, sec) => s + sec.items.length, 0);
   const riskDone = riskChecks.reduce((s, sec) => s + sec.filter(Boolean).length, 0);
 
-  let html = `<div class="btn-row">
-    <button class="btn-ghost" id="btn-reset-checklist">↺ Reset Checklist</button>
-  </div>`;
+  let html = "";
 
   html += `<div class="panel"><h2>I — Checklist Entry (${entryDone}/${ENTRY_ITEMS.length})</h2>`;
   ENTRY_ITEMS.forEach((item, i) => {
@@ -327,13 +341,14 @@ function renderChecklist() {
       renderChecklist();
     });
   });
-  document.getElementById("btn-reset-checklist").addEventListener("click", () => {
-    entryChecks = Array(ENTRY_ITEMS.length).fill(false);
-    riskChecks = RISK_SECTIONS.map(s => Array(s.items.length).fill(false));
-    saveJSON("checklist-entry", entryChecks);
-    saveJSON("checklist-risk", riskChecks);
-    renderChecklist();
-  });
+}
+
+function resetChecklist() {
+  entryChecks = Array(ENTRY_ITEMS.length).fill(false);
+  riskChecks = RISK_SECTIONS.map(s => Array(s.items.length).fill(false));
+  saveJSON("checklist-entry", entryChecks);
+  saveJSON("checklist-risk", riskChecks);
+  renderChecklist();
 }
 
 /* ================= JOURNAL ================= */
