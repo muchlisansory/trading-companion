@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#1b2430">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>Trading Companion</title>
+<style>
+  :root{
+    --ink:#1b2430;
+    --paper:#f6f4ef;
+    --line:#d8d3c6;
+    --accent:#8a6d3b;
+    --accent2:#2f5d50;
+    --danger:#a13d3d;
+    --good:#2f6d47;
+    --muted:#6b6458;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family: ui-monospace, "SF Mono", "Courier New", monospace;
+    background:var(--paper);
+    color:var(--ink);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .wrap{max-width:620px;margin:0 auto;padding:24px 16px 60px;}
+  header{margin-bottom:22px;}
+  .eyebrow{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin:0 0 6px;}
+  h1{font-size:24px;margin:0 0 4px;letter-spacing:-.01em;font-weight:700;}
+  .sub{color:var(--muted);font-size:13px;margin:0;}
+
+  .tabs{display:flex;border:1px solid var(--line);margin-bottom:20px;}
+  .tabs button{
+    flex:1;display:flex;align-items:center;justify-content:center;gap:6px;
+    padding:12px 6px;border:none;font-family:inherit;font-size:12.5px;cursor:pointer;
+    background:#fff;color:var(--muted);border-right:1px solid var(--line);
+  }
+  .tabs button:last-child{border-right:none;}
+  .tabs button.active{background:var(--ink);color:var(--paper);}
+
+  .panel{background:#fff;border:1px solid var(--line);padding:20px;margin-bottom:16px;}
+  .panel.dark{background:var(--ink);color:var(--paper);}
+  .panel h2{
+    font-size:12px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);
+    margin:0 0 16px;border-bottom:1px solid var(--line);padding-bottom:8px;
+  }
+  .panel.dark h2{color:#a7a094;border-bottom-color:#3a4453;}
+
+  label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px;}
+  .field{margin-bottom:14px;}
+  input[type=number], input[type=date], input[type=text], select, textarea{
+    width:100%;padding:10px 12px;font-family:inherit;font-size:14px;
+    border:1px solid var(--line);background:var(--paper);color:var(--ink);
+  }
+  textarea{min-height:60px;resize:vertical;}
+  input:focus, select:focus, textarea:focus{outline:2px solid var(--accent2);outline-offset:-1px;}
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .stat-label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#8f8879;margin-bottom:3px;}
+  .stat-val{font-size:18px;font-weight:600;}
+  .big{font-size:32px;font-weight:700;letter-spacing:-.02em;margin:2px 0 2px;}
+  .big span{font-size:15px;font-weight:400;color:#a7a094;}
+
+  .toggle{display:flex;border:1px solid var(--line);overflow:hidden;}
+  .toggle button{
+    flex:1;padding:10px;background:#fff;border:none;font-family:inherit;font-size:13px;
+    cursor:pointer;color:var(--muted);border-right:1px solid var(--line);
+  }
+  .toggle button:last-child{border-right:none;}
+  .toggle button.active{background:var(--accent2);color:#fff;}
+
+  .risk-row{display:flex;gap:8px;}
+  .risk-row button{
+    flex:1;padding:8px;border:1px solid var(--line);background:#fff;font-family:inherit;
+    cursor:pointer;font-size:13px;color:var(--muted);
+  }
+  .risk-row button.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+
+  .warn{margin-top:14px;padding:10px 12px;background:#3a2020;border-left:3px solid var(--danger);font-size:12.5px;color:#f0d8d8;display:none;}
+  .warn.show{display:block;}
+
+  .btn-primary{
+    display:inline-flex;align-items:center;gap:6px;background:var(--accent2);color:#fff;border:none;
+    padding:10px 16px;font-family:inherit;font-size:13px;cursor:pointer;
+  }
+  .btn-ghost{
+    display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid var(--line);color:var(--muted);
+    padding:8px 14px;font-family:inherit;font-size:12px;cursor:pointer;
+  }
+
+  .cb-row{
+    display:flex;gap:10px;align-items:flex-start;padding:9px 4px;border-bottom:1px solid var(--line);
+    font-size:14px;cursor:pointer;
+  }
+  .cb-row input{margin-top:3px;flex-shrink:0;width:16px;height:16px;accent-color:var(--accent2);}
+  .cb-row.checked span{color:#8f8879;text-decoration:line-through;}
+
+  .success-box{background:var(--good);color:#fff;padding:14px 16px;font-size:13.5px;font-weight:600;}
+  .lock-notice{display:flex;gap:8px;align-items:center;margin-top:12px;font-size:12.5px;color:var(--danger);}
+
+  .entry-card{border:1px solid var(--line);padding:12px;margin-bottom:10px;position:relative;}
+  .entry-top{display:flex;justify-content:space-between;align-items:flex-start;}
+  .entry-title{font-size:14px;font-weight:600;}
+  .entry-meta{font-size:12px;color:var(--muted);margin-top:4px;}
+  .entry-note{font-size:12px;margin-top:6px;color:#4a4438;}
+  .entry-result{font-size:13px;font-weight:700;text-align:right;}
+  .entry-del{background:none;border:none;cursor:pointer;color:#a3998a;margin-top:6px;font-size:12px;}
+
+  .note-text{font-size:11.5px;color:var(--muted);margin-top:16px;line-height:1.5;}
+  .footer-line{border-top:1px solid var(--line);margin-top:24px;padding-top:14px;font-size:11px;color:var(--muted);}
+
+  ::placeholder{color:#a3998a;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <p class="eyebrow">Trading Companion</p>
+    <h1>Checklist · Journal · Kalkulator</h1>
+    <p class="sub">Satu tempat untuk disiplin proses trading kamu.</p>
+  </header>
+
+  <div class="tabs">
+    <button id="tab-checklist" class="active">☑ Checklist</button>
+    <button id="tab-journal">📓 Journal</button>
+    <button id="tab-calculator">🧮 Kalkulator</button>
+  </div>
+
+  <div id="view-checklist"></div>
+  <div id="view-journal" style="display:none;"></div>
+  <div id="view-calculator" style="display:none;"></div>
+
+  <div class="footer-line">Alat bantu disiplin proses trading — bukan sinyal atau jaminan hasil. Data journal &amp; checklist tersimpan di perangkat kamu.</div>
+</div>
+
+<script>
+/* ---------- DATA ---------- */
+const ENTRY_ITEMS = [
+  "Struktur market sudah jelas (HH-HL untuk uptrend / LH-LL untuk downtrend)?",
+  "Sudah ada Impulsif Candle atau pergerakan signifikan (IFC/IMB)?",
+  "Inside bar / area SnR atau SnD sudah ditentukan?",
+  "Sudah terjadi retracement / retest ke area tersebut?",
+  "Sudah ada konfirmasi (candle rejection / ChoCh & BoS)?",
+  "RR minimal 1:1.5, maksimal 1:3?",
+  "Sudah ada liquidity yang mendukung arah entry?"
+];
+
+const RISK_SECTIONS = [
+  { title: "Position Sizing", items: [
+    "Risk per trade sudah dihitung, maksimal 1-2% dari modal?",
+    "Lot size disesuaikan dengan jarak SL?",
+    "SL di titik invalidasi struktur, bukan asal RR bagus?",
+    "TP realistis sesuai RR, bukan asal target besar?"
+  ]},
+  { title: "Batasan Harian / Mingguan", items: [
+    "Belum kena limit loss harian (3-5% modal)?",
+    "Belum kena limit loss mingguan (8-10% modal)?",
+    "Belum entry lebih dari 3x hari ini?"
+  ]},
+  { title: "Korelasi & Eksposur", items: [
+    "Total risk semua posisi terbuka di bawah 5-6% modal?",
+    "Posisi tidak saling berkorelasi tinggi?"
+  ]},
+  { title: "Disiplin Eksekusi", items: [
+    "SL sudah dipasang SAAT entry, bukan mental stop?",
+    "Tidak menggeser SL menjauh setelah floating loss?",
+    "Tidak averaging pada trade yang sedang loss?"
+  ]},
+  { title: "Evaluasi", items: [
+    "Trade ini akan dicatat di jurnal?",
+    "Kalau loss beruntun 2-3x, siap berhenti sejenak?"
+  ]}
+];
+
+/* ---------- STORAGE HELPERS ---------- */
+function loadJSON(key, fallback) {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
+  } catch (e) { return fallback; }
+}
+function saveJSON(key, value) {
+  try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) { console.error(e); }
+}
+
+/* ---------- TAB SWITCHING ---------- */
+const tabs = ["checklist", "journal", "calculator"];
+function showTab(name) {
+  tabs.forEach(t => {
+    document.getElementById("view-" + t).style.display = (t === name) ? "block" : "none";
+    document.getElementById("tab-" + t).classList.toggle("active", t === name);
+  });
+}
+tabs.forEach(t => document.getElementById("tab-" + t).addEventListener("click", () => showTab(t)));
+
+/* ================= CHECKLIST ================= */
+let entryChecks = loadJSON("checklist-entry", Array(ENTRY_ITEMS.length).fill(false));
+let riskChecks = loadJSON("checklist-risk", RISK_SECTIONS.map(s => Array(s.items.length).fill(false)));
+
+function renderChecklist() {
+  const el = document.getElementById("view-checklist");
+  const entryDone = entryChecks.filter(Boolean).length;
+  const entryComplete = entryDone === ENTRY_ITEMS.length;
+  const riskTotal = RISK_SECTIONS.reduce((s, sec) => s + sec.items.length, 0);
+  const riskDone = riskChecks.reduce((s, sec) => s + sec.filter(Boolean).length, 0);
+
+  let html = `<div style="display:flex;justify-content:flex-end;margin-bottom:12px;">
+    <button class="btn-ghost" id="btn-reset-checklist">↺ Reset Checklist</button>
+  </div>`;
+
+  html += `<div class="panel"><h2>I — Checklist Entry (${entryDone}/${ENTRY_ITEMS.length})</h2>`;
+  ENTRY_ITEMS.forEach((item, i) => {
+    html += `<label class="cb-row ${entryChecks[i] ? "checked" : ""}">
+      <input type="checkbox" data-type="entry" data-idx="${i}" ${entryChecks[i] ? "checked" : ""}>
+      <span>${item}</span>
+    </label>`;
+  });
+  if (!entryComplete) {
+    html += `<div class="lock-notice">⚠ Semua poin wajib dicentang sebelum lanjut ke risk management.</div>`;
+  }
+  html += `</div>`;
+
+  if (entryComplete) {
+    RISK_SECTIONS.forEach((section, sIdx) => {
+      html += `<div class="panel"><h2>Risk Management — ${section.title}</h2>`;
+      section.items.forEach((item, iIdx) => {
+        const checked = riskChecks[sIdx][iIdx];
+        html += `<label class="cb-row ${checked ? "checked" : ""}">
+          <input type="checkbox" data-type="risk" data-section="${sIdx}" data-idx="${iIdx}" ${checked ? "checked" : ""}>
+          <span>${item}</span>
+        </label>`;
+      });
+      html += `</div>`;
+    });
+
+    if (riskDone === riskTotal) {
+      html += `<div class="success-box">Semua checklist terpenuhi. Silakan lanjut ke kalkulator lot size untuk menentukan ukuran posisi.</div>`;
+    }
+  }
+
+  html += `<p class="note-text">Checklist ini adalah kerangka awal, bukan jaminan profit. Uji lewat backtest dan forward test sebelum menaikkan risiko.</p>`;
+
+  el.innerHTML = html;
+
+  el.querySelectorAll('input[data-type="entry"]').forEach(cb => {
+    cb.addEventListener("change", () => {
+      const i = parseInt(cb.dataset.idx, 10);
+      entryChecks[i] = !entryChecks[i];
+      saveJSON("checklist-entry", entryChecks);
+      renderChecklist();
+    });
+  });
+  el.querySelectorAll('input[data-type="risk"]').forEach(cb => {
+    cb.addEventListener("change", () => {
+      const s = parseInt(cb.dataset.section, 10);
+      const i = parseInt(cb.dataset.idx, 10);
+      riskChecks[s][i] = !riskChecks[s][i];
+      saveJSON("checklist-risk", riskChecks);
+      renderChecklist();
+    });
+  });
+  document.getElementById("btn-reset-checklist").addEventListener("click", () => {
+    entryChecks = Array(ENTRY_ITEMS.length).fill(false);
+    riskChecks = RISK_SECTIONS.map(s => Array(s.items.length).fill(false));
+    saveJSON("checklist-entry", entryChecks);
+    saveJSON("checklist-risk", riskChecks);
+    renderChecklist();
+  });
+}
+
+/* ================= JOURNAL ================= */
+let entries = loadJSON("journal-entries", []);
+let journalForm = {
+  tanggal: new Date().toISOString().slice(0, 10),
+  pair: "", arah: "buy", entry: "", sl: "", tp: "", lot: "",
+  hasil: "profit", pl: "", catatan: ""
+};
+
+function computeStats() {
+  const total = entries.length;
+  const wins = entries.filter(e => e.hasil === "profit").length;
+  const losses = entries.filter(e => e.hasil === "loss").length;
+  const winrate = total > 0 ? Math.round((wins / total) * 100) : 0;
+  const totalPL = entries.reduce((sum, e) => sum + (parseFloat(e.pl) || 0), 0);
+  return { total, wins, losses, winrate, totalPL };
+}
+
+function renderJournal() {
+  const el = document.getElementById("view-journal");
+  const stats = computeStats();
+
+  let html = `<div class="panel dark"><h2>Ringkasan</h2>
+    <div class="grid2" style="grid-template-columns:repeat(4,1fr);">
+      <div><div class="stat-label" style="color:#8f8879;">Total Trade</div><div class="big" style="font-size:20px;">${stats.total}</div></div>
+      <div><div class="stat-label" style="color:#8f8879;">Win Rate</div><div class="big" style="font-size:20px;">${stats.winrate}%</div></div>
+      <div><div class="stat-label" style="color:#8f8879;">Menang/Kalah</div><div class="big" style="font-size:20px;">${stats.wins}/${stats.losses}</div></div>
+      <div><div class="stat-label" style="color:#8f8879;">Total P/L</div><div class="big" style="font-size:20px;color:${stats.totalPL>=0?'#7fbf9e':'#e0a3a3'};">${stats.totalPL>=0?'+':''}${stats.totalPL.toFixed(2)}</div></div>
+    </div>
+  </div>`;
+
+  html += `<div class="panel"><h2>Catat Trade Baru</h2>
+    <div class="grid2">
+      <div class="field"><label>Tanggal</label><input type="date" id="f-tanggal" value="${journalForm.tanggal}"></div>
+      <div class="field"><label>Pair</label><input type="text" id="f-pair" placeholder="XAUUSD, EURUSD..." value="${journalForm.pair}"></div>
+      <div class="field"><label>Arah</label>
+        <select id="f-arah">
+          <option value="buy" ${journalForm.arah==="buy"?"selected":""}>Buy</option>
+          <option value="sell" ${journalForm.arah==="sell"?"selected":""}>Sell</option>
+        </select>
+      </div>
+      <div class="field"><label>Lot</label><input type="number" step="0.01" id="f-lot" value="${journalForm.lot}"></div>
+      <div class="field"><label>Harga Entry</label><input type="number" step="0.0001" id="f-entry" value="${journalForm.entry}"></div>
+      <div class="field"><label>Stop Loss</label><input type="number" step="0.0001" id="f-sl" value="${journalForm.sl}"></div>
+      <div class="field"><label>Take Profit</label><input type="number" step="0.0001" id="f-tp" value="${journalForm.tp}"></div>
+      <div class="field"><label>Hasil</label>
+        <select id="f-hasil">
+          <option value="profit" ${journalForm.hasil==="profit"?"selected":""}>Profit</option>
+          <option value="loss" ${journalForm.hasil==="loss"?"selected":""}>Loss</option>
+          <option value="be" ${journalForm.hasil==="be"?"selected":""}>Break Even</option>
+        </select>
+      </div>
+      <div class="field"><label>P/L ($)</label><input type="number" step="0.01" id="f-pl" value="${journalForm.pl}"></div>
+    </div>
+    <div class="field"><label>Catatan (alasan entry, pelanggaran checklist, dsb.)</label><textarea id="f-catatan">${journalForm.catatan}</textarea></div>
+    <button class="btn-primary" id="btn-add-entry">+ Simpan Trade</button>
+  </div>`;
+
+  html += `<div class="panel"><h2>Riwayat (${entries.length})</h2>`;
+  if (entries.length === 0) {
+    html += `<p style="font-size:13px;color:var(--muted);">Belum ada trade tercatat.</p>`;
+  } else {
+    entries.forEach(e => {
+      const resultColor = e.hasil === "profit" ? "var(--good)" : e.hasil === "loss" ? "var(--danger)" : "var(--muted)";
+      const resultLabel = e.hasil === "profit" ? "Profit" : e.hasil === "loss" ? "Loss" : "BE";
+      const arrow = e.arah === "buy" ? "▲" : "▼";
+      html += `<div class="entry-card">
+        <div class="entry-top">
+          <div>
+            <div class="entry-title">${arrow} ${e.pair || "-"} · ${e.lot || "0"} lot <span style="font-size:11px;color:var(--muted);font-weight:400;">${e.tanggal}</span></div>
+            <div class="entry-meta">Entry ${e.entry || "-"} · SL ${e.sl || "-"} · TP ${e.tp || "-"}</div>
+            ${e.catatan ? `<div class="entry-note">${e.catatan}</div>` : ""}
+          </div>
+          <div class="entry-result">
+            <div style="color:${resultColor};">${resultLabel}${e.pl ? ` (${e.pl>=0?'+':''}${e.pl})` : ""}</div>
+            <button class="entry-del" data-id="${e.id}">🗑 Hapus</button>
+          </div>
+        </div>
+      </div>`;
+    });
+  }
+  html += `</div>`;
+
+  el.innerHTML = html;
+
+  ["tanggal","pair","arah","lot","entry","sl","tp","hasil","pl","catatan"].forEach(field => {
+    const node = document.getElementById("f-" + field);
+    node.addEventListener("input", () => { journalForm[field] = node.value; });
+    node.addEventListener("change", () => { journalForm[field] = node.value; });
+  });
+
+  document.getElementById("btn-add-entry").addEventListener("click", () => {
+    if (!journalForm.pair) return;
+    entries.unshift(Object.assign({}, journalForm, { id: Date.now() }));
+    saveJSON("journal-entries", entries);
+    journalForm = {
+      tanggal: new Date().toISOString().slice(0, 10),
+      pair: "", arah: "buy", entry: "", sl: "", tp: "", lot: "",
+      hasil: "profit", pl: "", catatan: ""
+    };
+    renderJournal();
+  });
+
+  el.querySelectorAll(".entry-del").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const id = parseInt(btn.dataset.id, 10);
+      entries = entries.filter(e => e.id !== id);
+      saveJSON("journal-entries", entries);
+      renderJournal();
+    });
+  });
+}
+
+/* ================= CALCULATOR ================= */
+let calcState = { modal: 1000, pair: "forex", riskPct: 1, sl: 20 };
+
+function renderCalculator() {
+  const el = document.getElementById("view-calculator");
+  const riskAmount = calcState.modal * (calcState.riskPct / 100);
+  const pipValuePerLot = calcState.pair === "forex" ? 10 : 100;
+  const lot = calcState.sl > 0 ? riskAmount / (calcState.sl * pipValuePerLot) : 0;
+  const pipValThisLot = pipValuePerLot * lot;
+  const belowMin = lot > 0 && lot < 0.01;
+
+  let html = `<div class="panel"><h2>Modal &amp; Instrumen</h2>
+    <div class="field"><label>Modal ($)</label><input type="number" id="c-modal" value="${calcState.modal}"></div>
+    <div class="field"><label>Pasangan / Instrumen</label>
+      <div class="toggle">
+        <button data-pair="forex" class="${calcState.pair==='forex'?'active':''}">Forex Major (USD quote)</button>
+        <button data-pair="xauusd" class="${calcState.pair==='xauusd'?'active':''}">XAUUSD (Gold)</button>
+      </div>
+    </div>
+  </div>`;
+
+  html += `<div class="panel"><h2>Risk per Trade</h2>
+    <div class="field"><label>Persentase risk</label>
+      <div class="risk-row">
+        ${[0.5,1,1.5,2].map(r => `<button data-risk="${r}" class="${calcState.riskPct===r?'active':''}">${r}%</button>`).join("")}
+      </div>
+    </div>
+    <div class="field"><label>${calcState.pair==='forex' ? 'Jarak SL (pips)' : 'Jarak SL ($ / poin harga)'}</label>
+      <input type="number" id="c-sl" value="${calcState.sl}">
+    </div>
+  </div>`;
+
+  html += `<div class="panel dark"><h2>Hasil</h2>
+    <div class="stat-label" style="color:#8f8879;">Lot size yang dipakai</div>
+    <div class="big">${lot.toFixed(3)} <span>lot</span></div>
+    <div class="grid2" style="margin-top:16px;">
+      <div><div class="stat-label" style="color:#8f8879;">Risk amount</div><div class="stat-val">$${riskAmount.toFixed(2)}</div></div>
+      <div><div class="stat-label" style="color:#8f8879;">Nilai per pip (lot ini)</div><div class="stat-val">$${pipValThisLot.toFixed(2)}</div></div>
+    </div>
+    <div class="warn ${belowMin ? 'show' : ''}">Lot di bawah minimum umum broker (0.01). Perbesar % risk atau cari setup dengan SL lebih sempit.</div>
+  </div>`;
+
+  html += `<p class="note-text">Rumus forex: Lot = Risk ÷ (Jarak SL pips × $10/pip). Rumus XAUUSD: Lot = Risk ÷ (Jarak SL $ × $100/lot). Cek Contract Specification broker kamu — nilai kontrak bisa berbeda.</p>`;
+
+  el.innerHTML = html;
+
+  document.getElementById("c-modal").addEventListener("input", (e) => {
+    calcState.modal = parseFloat(e.target.value) || 0;
+    renderCalculator();
+  });
+  document.getElementById("c-sl").addEventListener("input", (e) => {
+    calcState.sl = parseFloat(e.target.value) || 0;
+    renderCalculator();
+  });
+  el.querySelectorAll("[data-pair]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      calcState.pair = btn.dataset.pair;
+      calcState.sl = calcState.pair === "forex" ? 20 : 5;
+      renderCalculator();
+    });
+  });
+  el.querySelectorAll("[data-risk]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      calcState.riskPct = parseFloat(btn.dataset.risk);
+      renderCalculator();
+    });
+  });
+}
+
+/* ---------- INIT ---------- */
+renderChecklist();
+renderJournal();
+renderCalculator();
+showTab("checklist");
+
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("service-worker.js").catch((e) => console.warn("SW register failed", e));
+  });
+}
+</script>
+</body>
+</html>
