@@ -215,7 +215,7 @@ function renderChecklist() {
     <button class="btn-ghost" id="btn-reset-checklist">↺ Reset Checklist</button>
   </div>`;
 
-  html += `<div class="panel"><h2>Checklist Entry (${entryDone}/${ENTRY_ITEMS.length})</h2>`;
+  html += `<div class="panel"><h2>I — Checklist Entry (${entryDone}/${ENTRY_ITEMS.length})</h2>`;
   ENTRY_ITEMS.forEach((item, i) => {
     html += `<label class="cb-row ${entryChecks[i] ? "checked" : ""}">
       <input type="checkbox" data-type="entry" data-idx="${i}" ${entryChecks[i] ? "checked" : ""}>
@@ -228,8 +228,9 @@ function renderChecklist() {
   html += `</div>`;
 
   if (entryComplete) {
+    const ROMAN = ["II", "III", "IV", "V", "VI"];
     RISK_SECTIONS.forEach((section, sIdx) => {
-      html += `<div class="panel"><h2>Risk Management — ${section.title}</h2>`;
+      html += `<div class="panel"><h2>${ROMAN[sIdx]} — Risk Management: ${section.title}</h2>`;
       section.items.forEach((item, iIdx) => {
         const checked = riskChecks[sIdx][iIdx];
         html += `<label class="cb-row ${checked ? "checked" : ""}">
