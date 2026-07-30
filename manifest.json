@@ -1,6 +1,6 @@
 {
   "name": "Trading Companion",
-  "short_name": "TradingApp",
+  "short_name": "TradeCompanion",
   "description": "Checklist entry, journal trading, dan kalkulator lot size dalam satu aplikasi.",
   "start_url": "./index.html",
   "scope": "./",
