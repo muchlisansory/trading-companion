@@ -159,7 +159,8 @@
   .entry-meta{font-size:12px;color:var(--muted);margin-top:4px;}
   .entry-note{font-size:12px;margin-top:6px;color:var(--text);}
   .entry-result{font-size:13px;font-weight:700;text-align:right;}
-  .entry-del{background:none;border:none;cursor:pointer;color:var(--muted);margin-top:6px;font-size:12px;}
+  .entry-del{background:none;border:none;cursor:pointer;color:var(--muted);margin-top:6px;font-size:12px;display:block;}
+  .entry-edit{background:none;border:none;cursor:pointer;color:var(--accent2);margin-top:6px;font-size:12px;display:block;}
 
   .note-text{font-size:11.5px;color:var(--muted);margin-top:16px;line-height:1.5;}
   .footer-line{border-top:1px solid var(--line);margin-top:24px;padding-top:14px;font-size:11px;color:var(--muted);}
@@ -192,7 +193,7 @@
     header{ position:static !important; }
     .header-spacer{ display:none !important; }
     .fab, .theme-toggle{ display:none !important; }
-    .tabs, .btn-ghost, .btn-danger-ghost, .entry-del, .footer-line, #journal-form-panel, .lock-notice { display:none !important; }
+    .tabs, .btn-ghost, .btn-danger-ghost, .entry-del, .entry-edit, .footer-line, #journal-form-panel, .lock-notice { display:none !important; }
     body.print-journal #view-checklist, body.print-journal #view-calculator { display:none !important; }
     body.print-journal #view-journal { display:block !important; }
     body{background:#fff;}
@@ -384,6 +385,8 @@ function resetChecklist() {
 
 /* ================= JOURNAL ================= */
 let entries = loadJSON("journal-entries", []);
+let editingId = null;
+let saldoAwal = loadJSON("saldo-awal", 0);
 let journalForm = {
   tanggal: new Date().toISOString().slice(0, 10),
   pair: "", arah: "buy", entry: "", sl: "", tp: "", lot: "",
@@ -409,7 +412,22 @@ function renderJournal() {
   const el = document.getElementById("view-journal");
   const stats = computeStats();
 
-  let html = `<div class="panel dark"><h2>Ringkasan</h2>
+  let html = `<div class="panel dark"><h2>Saldo</h2>
+    <div class="grid2">
+      <div>
+        <div class="stat-label" style="color:#8f8879;">Saldo Awal ($)</div>
+        <input type="number" id="f-saldo-awal" step="0.01" value="${saldoAwal}"
+          style="width:100%;padding:8px 10px;font-family:inherit;font-size:16px;font-weight:700;
+            background:rgba(255,255,255,0.08);color:#f6f4ef;border:1px solid rgba(255,255,255,0.25);margin-top:2px;">
+      </div>
+      <div>
+        <div class="stat-label" style="color:#8f8879;">Total Saldo</div>
+        <div class="big" id="total-saldo-display" style="font-size:26px;color:${(saldoAwal + stats.totalPL)>=0?'#7fbf9e':'#e0a3a3'};">$${(saldoAwal + stats.totalPL).toFixed(2)}</div>
+      </div>
+    </div>
+  </div>`;
+
+  html += `<div class="panel dark"><h2>Ringkasan</h2>
     <div class="grid2" style="grid-template-columns:repeat(4,1fr);">
       <div><div class="stat-label" style="color:#8f8879;">Total Trade</div><div class="big" style="font-size:20px;">${stats.total}</div></div>
       <div><div class="stat-label" style="color:#8f8879;">Win Rate</div><div class="big" style="font-size:20px;">${stats.winrate}%</div></div>
@@ -418,7 +436,7 @@ function renderJournal() {
     </div>
   </div>`;
 
-  html += `<div class="panel" id="journal-form-panel"><h2>Catat Trade Baru</h2>
+  html += `<div class="panel" id="journal-form-panel"><h2>${editingId ? "Edit Trade" : "Catat Trade Baru"}</h2>
     <div style="margin-bottom:14px;font-size:12.5px;font-weight:600;color:${isChecklistComplete() ? 'var(--good)' : 'var(--danger)'};">
       ${isChecklistComplete() ? '✓ Checklist saat ini lengkap — status ini akan ikut tersimpan.' : '⚠ Checklist saat ini belum lengkap — status ini akan ikut tersimpan.'}
     </div>
@@ -445,7 +463,10 @@ function renderJournal() {
       <div class="field"><label>P/L ($)</label><input type="number" step="0.01" id="f-pl" value="${journalForm.pl}"></div>
     </div>
     <div class="field"><label>Catatan (alasan entry, pelanggaran checklist, dsb.)</label><textarea id="f-catatan">${journalForm.catatan}</textarea></div>
-    <button class="btn-primary" id="btn-add-entry">+ Simpan Trade</button>
+    <div class="btn-row" style="justify-content:flex-start;">
+      <button class="btn-primary" id="btn-add-entry">${editingId ? "✓ Update Trade" : "+ Simpan Trade"}</button>
+      ${editingId ? `<button class="btn-ghost" id="btn-cancel-edit">Batal</button>` : ""}
+    </div>
   </div>`;
 
   html += `<div class="panel"><h2>Riwayat (${entries.length})</h2>`;
@@ -476,6 +497,7 @@ function renderJournal() {
           </div>
           <div class="entry-result">
             <div style="color:${resultColor};">${resultLabel}${e.pl ? ` (${e.pl>=0?'+':''}${e.pl})` : ""}</div>
+            <button class="entry-edit" data-id="${e.id}">✏️ Edit</button>
             <button class="entry-del" data-id="${e.id}">🗑 Hapus</button>
           </div>
         </div>
@@ -486,6 +508,15 @@ function renderJournal() {
 
   el.innerHTML = html;
 
+  document.getElementById("f-saldo-awal").addEventListener("input", (e) => {
+    saldoAwal = parseFloat(e.target.value) || 0;
+    saveJSON("saldo-awal", saldoAwal);
+    const totalSaldo = saldoAwal + computeStats().totalPL;
+    const displayEl = document.getElementById("total-saldo-display");
+    displayEl.textContent = "$" + totalSaldo.toFixed(2);
+    displayEl.style.color = totalSaldo >= 0 ? "#7fbf9e" : "#e0a3a3";
+  });
+
   ["tanggal","pair","arah","lot","entry","sl","tp","hasil","pl","catatan"].forEach(field => {
     const node = document.getElementById("f-" + field);
     node.addEventListener("input", () => {
@@ -494,14 +525,36 @@ function renderJournal() {
         node.value = node.value.toUpperCase();
         node.setSelectionRange(pos, pos);
       }
+      if (field === "pl") {
+        const hasilNow = document.getElementById("f-hasil").value;
+        const abs = Math.abs(parseFloat(node.value) || 0);
+        if (hasilNow === "loss" && abs > 0) node.value = "-" + abs;
+        else if (hasilNow === "profit" && abs > 0) node.value = String(abs);
+      }
       journalForm[field] = node.value;
     });
-    node.addEventListener("change", () => { journalForm[field] = node.value; });
+    node.addEventListener("change", () => {
+      if (field === "hasil") {
+        const plNode = document.getElementById("f-pl");
+        const abs = Math.abs(parseFloat(plNode.value) || 0);
+        if (abs > 0) {
+          if (node.value === "loss") plNode.value = "-" + abs;
+          else if (node.value === "profit") plNode.value = String(abs);
+        }
+        journalForm.pl = plNode.value;
+      }
+      journalForm[field] = node.value;
+    });
   });
 
   document.getElementById("btn-add-entry").addEventListener("click", () => {
     if (!journalForm.pair) return;
-    entries.unshift(Object.assign({}, journalForm, { id: Date.now(), checklistOk: isChecklistComplete() }));
+    if (editingId) {
+      entries = entries.map(e => e.id === editingId ? Object.assign({}, e, journalForm, { checklistOk: isChecklistComplete() }) : e);
+      editingId = null;
+    } else {
+      entries.unshift(Object.assign({}, journalForm, { id: Date.now(), checklistOk: isChecklistComplete() }));
+    }
     saveJSON("journal-entries", entries);
     journalForm = {
       tanggal: new Date().toISOString().slice(0, 10),
@@ -511,10 +564,40 @@ function renderJournal() {
     renderJournal();
   });
 
+  const cancelBtn = document.getElementById("btn-cancel-edit");
+  if (cancelBtn) {
+    cancelBtn.addEventListener("click", () => {
+      editingId = null;
+      journalForm = {
+        tanggal: new Date().toISOString().slice(0, 10),
+        pair: "", arah: "buy", entry: "", sl: "", tp: "", lot: "",
+        hasil: "profit", pl: "", catatan: ""
+      };
+      renderJournal();
+    });
+  }
+
+  el.querySelectorAll(".entry-edit").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const id = parseInt(btn.dataset.id, 10);
+      const target = entries.find(e => e.id === id);
+      if (!target) return;
+      editingId = id;
+      journalForm = {
+        tanggal: target.tanggal, pair: target.pair, arah: target.arah,
+        entry: target.entry, sl: target.sl, tp: target.tp, lot: target.lot,
+        hasil: target.hasil, pl: target.pl, catatan: target.catatan
+      };
+      renderJournal();
+      document.getElementById("journal-form-panel").scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  });
+
   el.querySelectorAll(".entry-del").forEach(btn => {
     btn.addEventListener("click", () => {
       const id = parseInt(btn.dataset.id, 10);
       entries = entries.filter(e => e.id !== id);
+      if (editingId === id) editingId = null;
       saveJSON("journal-entries", entries);
       renderJournal();
     });
@@ -533,12 +616,12 @@ function renderJournal() {
 }
 
 /* ================= CALCULATOR ================= */
-let calcState = { modal: 1000, pair: "forex", riskPct: 1, sl: 20 };
+let calcState = { modal: 1000, pair: "xauusd", riskPct: 1, sl: 5 };
 
 function renderCalculator() {
   const el = document.getElementById("view-calculator");
   const riskAmount = calcState.modal * (calcState.riskPct / 100);
-  const pipValuePerLot = calcState.pair === "forex" ? 10 : 100;
+  const pipValuePerLot = calcState.pair === "forex" ? 10 : calcState.pair === "xauusd" ? 100 : 1;
   const lot = calcState.sl > 0 ? riskAmount / (calcState.sl * pipValuePerLot) : 0;
   const pipValThisLot = pipValuePerLot * lot;
   const belowMin = lot > 0 && lot < 0.01;
@@ -547,8 +630,9 @@ function renderCalculator() {
     <div class="field"><label>Modal ($)</label><input type="number" id="c-modal" value="${calcState.modal}"></div>
     <div class="field"><label>Pasangan / Instrumen</label>
       <div class="toggle">
-        <button data-pair="forex" class="${calcState.pair==='forex'?'active':''}">Forex Major (USD quote)</button>
         <button data-pair="xauusd" class="${calcState.pair==='xauusd'?'active':''}">XAUUSD (Gold)</button>
+        <button data-pair="btcusd" class="${calcState.pair==='btcusd'?'active':''}">BTCUSD</button>
+        <button data-pair="forex" class="${calcState.pair==='forex'?'active':''}">Forex Major</button>
       </div>
     </div>
   </div>`;
@@ -574,7 +658,7 @@ function renderCalculator() {
     <div class="warn ${belowMin ? 'show' : ''}">Lot di bawah minimum umum broker (0.01). Perbesar % risk atau cari setup dengan SL lebih sempit.</div>
   </div>`;
 
-  html += `<p class="note-text">Rumus forex: Lot = Risk ÷ (Jarak SL pips × $10/pip). Rumus XAUUSD: Lot = Risk ÷ (Jarak SL $ × $100/lot). Cek Contract Specification broker kamu — nilai kontrak bisa berbeda.</p>`;
+  html += `<p class="note-text">Rumus XAUUSD: Lot = Risk ÷ (Jarak SL $ × $100/lot). Rumus BTCUSD: Lot = Risk ÷ (Jarak SL $ × $1/lot, asumsi 1 lot = 1 BTC). Rumus Forex: Lot = Risk ÷ (Jarak SL pips × $10/pip). Cek Contract Specification broker kamu — nilai kontrak bisa berbeda, terutama untuk BTCUSD yang variasinya besar antar broker.</p>`;
 
   el.innerHTML = html;
 
@@ -589,7 +673,7 @@ function renderCalculator() {
   el.querySelectorAll("[data-pair]").forEach(btn => {
     btn.addEventListener("click", () => {
       calcState.pair = btn.dataset.pair;
-      calcState.sl = calcState.pair === "forex" ? 20 : 5;
+      calcState.sl = calcState.pair === "forex" ? 20 : calcState.pair === "xauusd" ? 5 : 100;
       renderCalculator();
     });
   });
