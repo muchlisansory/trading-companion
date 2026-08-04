@@ -2,17 +2,19 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=overlays-content">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#1b2430">
+<meta name="color-scheme" content="light dark">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <title>Trading Companion</title>
 <style>
   :root{
+    color-scheme: light;
     --bg:#f6f4ef;
     --surface:#ffffff;
     --surface-dark:#1b2430;
@@ -27,10 +29,11 @@
     --danger:#b23b3b;
     --good:#1f7a4d;
     --shadow:rgba(27,36,48,0.08);
-    --good-on-dark:#7fbf9e;
-    --danger-on-dark:#e0a3a3;
+    --good-on-dark:var(--good);
+    --danger-on-dark:var(--danger);
   }
   body.theme-dark{
+    color-scheme: dark;
     --bg:#10161d;
     --surface:#1a222b;
     --text:#e9e6de;
@@ -82,24 +85,32 @@
     padding-bottom:env(safe-area-inset-bottom, 0px);
   }
   .tabs button{
-    flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+    flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
     padding:10px 6px 8px;border:none;font-family:inherit;font-size:11px;cursor:pointer;
     background:var(--surface);color:var(--muted);position:relative;
+    transition:color .25s ease;
   }
-  .tabs button .tab-icon{font-size:19px;line-height:1;}
+  .tabs button .tab-icon{width:21px;height:21px;line-height:1;transition:color .25s ease;}
+  .tabs button .tab-icon svg{width:100%;height:100%;display:block;}
   .tabs button.active{color:var(--accent2);}
-  .tabs button.active::before{
-    content:"";position:absolute;top:0;left:50%;transform:translateX(-50%);
-    width:28px;height:2.5px;background:var(--accent2);
+  .tab-indicator{
+    position:absolute;top:0;height:2.5px;background:var(--accent2);
+    transition:left .28s cubic-bezier(.4,0,.2,1), width .28s cubic-bezier(.4,0,.2,1);
+  }
+
+  .view-fade{animation:viewFadeIn .22s ease;}
+  @keyframes viewFadeIn{
+    from{opacity:0;transform:translateY(4px);}
+    to{opacity:1;transform:translateY(0);}
   }
 
   .panel{background:var(--surface);border:1px solid var(--line);padding:20px;margin-bottom:16px;}
-  .panel.dark{background:var(--surface-dark);color:var(--text-inverse);}
+  .panel.dark{background:var(--surface);color:var(--text);}
   .panel h2{
     font-size:12px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);
     margin:0 0 16px;border-bottom:1px solid var(--line);padding-bottom:8px;
   }
-  .panel.dark h2{color:var(--muted-on-dark);border-bottom-color:#3a4453;}
+  .panel.dark h2{color:var(--muted);border-bottom-color:var(--line);}
 
   label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px;}
   .field{margin-bottom:14px;}
@@ -111,10 +122,10 @@
   input:focus, select:focus, textarea:focus{outline:2px solid var(--accent2);outline-offset:-1px;}
 
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
-  .stat-label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted-on-dark);margin-bottom:3px;}
+  .stat-label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px;}
   .stat-val{font-size:18px;font-weight:600;}
   .big{font-size:32px;font-weight:700;letter-spacing:-.02em;margin:2px 0 2px;}
-  .big span{font-size:15px;font-weight:400;color:var(--muted-on-dark);}
+  .big span{font-size:15px;font-weight:400;color:var(--muted);}
 
   .toggle{display:flex;border:1px solid var(--line);overflow:hidden;}
   .toggle button{
@@ -157,7 +168,8 @@
   .entry-top{display:flex;justify-content:space-between;align-items:flex-start;}
   .entry-title{font-size:14px;font-weight:600;}
   .entry-meta{font-size:12px;color:var(--muted);margin-top:4px;}
-  .entry-note{font-size:12px;margin-top:6px;color:var(--text);}
+  .entry-note{font-size:12px;margin-top:6px;color:var(--text);white-space:pre-line;line-height:1.5;}
+  .entry-link{display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--accent2);margin-top:6px;text-decoration:underline;font-weight:500;}
   .entry-result{font-size:13px;font-weight:700;text-align:right;}
   .entry-del{background:none;border:none;cursor:pointer;color:var(--muted);margin-top:6px;font-size:12px;display:block;}
   .entry-edit{background:none;border:none;cursor:pointer;color:var(--accent2);margin-top:6px;font-size:12px;display:block;}
@@ -184,6 +196,8 @@
   .fab:active{transform:scale(0.94);}
   .fab-danger{background:var(--danger);}
 
+  .tabs, .fab { transition: bottom .2s ease; }
+
   @media print {
     body.theme-dark{
       --bg:#f6f4ef !important; --surface:#ffffff !important; --text:#1b2430 !important;
@@ -194,8 +208,8 @@
     .header-spacer{ display:none !important; }
     .fab, .theme-toggle{ display:none !important; }
     .tabs, .btn-ghost, .btn-danger-ghost, .entry-del, .entry-edit, .footer-line, #journal-form-panel, .lock-notice { display:none !important; }
-    body.print-journal #view-checklist, body.print-journal #view-calculator { display:none !important; }
-    body.print-journal #view-journal { display:block !important; }
+    body.print-journal #view-checklist, body.print-journal #view-calculator, body.print-journal #view-journal { display:none !important; }
+    body.print-journal #view-statistik { display:block !important; }
     body{background:#fff;}
     .wrap{max-width:100%;padding:0;}
     .panel{break-inside:avoid;border:1px solid #999;}
@@ -205,6 +219,7 @@
     .panel.dark .big, .panel.dark .stat-val{color:#000 !important;}
     .cb-row{cursor:default;}
     .success-box{background:#fff !important;color:#000 !important;border:1px solid #2f6d47;}
+    .entry-link{color:#1f7a4d !important;}
   }
 </style>
 </head>
@@ -213,14 +228,15 @@
   <header>
     <div class="header-text">
       <p class="eyebrow">Trading Companion</p>
-      <h1>Checklist · Journal · Kalkulator</h1>
+      <h1 id="page-title">Statistik</h1>
       <p class="sub">Satu tempat untuk disiplin proses trading kamu.</p>
     </div>
     <button class="theme-toggle" id="theme-toggle" title="Ganti tema Terang/Gelap">🌙</button>
   </header>
   <div class="header-spacer"></div>
 
-  <div id="view-checklist"></div>
+  <div id="view-statistik"></div>
+  <div id="view-checklist" style="display:none;"></div>
   <div id="view-journal" style="display:none;"></div>
   <div id="view-calculator" style="display:none;"></div>
 
@@ -231,9 +247,54 @@
 <button class="fab" id="fab-export-journal" title="Simpan Journal sebagai PDF" style="display:none;">⬇</button>
 
 <div class="tabs">
-  <button id="tab-checklist" class="active"><span class="tab-icon">☑</span>Checklist</button>
-  <button id="tab-journal"><span class="tab-icon">📓</span>Journal</button>
-  <button id="tab-calculator"><span class="tab-icon">🧮</span>Kalkulator</button>
+  <button id="tab-statistik" class="active">
+    <span class="tab-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="5" y1="20" x2="5" y2="12"></line>
+        <line x1="12" y1="20" x2="12" y2="6"></line>
+        <line x1="19" y1="20" x2="19" y2="15"></line>
+      </svg>
+    </span>Statistik
+  </button>
+  <button id="tab-checklist">
+    <span class="tab-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="4 6 6 8 9 4"></polyline>
+        <line x1="6" y1="13" x2="20" y2="13"></line>
+        <line x1="6" y1="17" x2="20" y2="17"></line>
+        <line x1="6" y1="21" x2="20" y2="21"></line>
+        <line x1="6" y1="9" x2="20" y2="9"></line>
+      </svg>
+    </span>Checklist
+  </button>
+  <button id="tab-journal">
+    <span class="tab-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M6 3h11a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"></path>
+        <line x1="6" y1="3" x2="6" y2="21"></line>
+        <line x1="9" y1="8" x2="14" y2="8"></line>
+        <line x1="9" y1="12" x2="14" y2="12"></line>
+      </svg>
+    </span>Journal
+  </button>
+  <button id="tab-calculator">
+    <span class="tab-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="4" y="2" width="16" height="20" rx="2"></rect>
+        <line x1="8" y1="6" x2="16" y2="6"></line>
+        <line x1="7.5" y1="11" x2="7.5" y2="11.01"></line>
+        <line x1="12" y1="11" x2="12" y2="11.01"></line>
+        <line x1="16.5" y1="11" x2="16.5" y2="11.01"></line>
+        <line x1="7.5" y1="15" x2="7.5" y2="15.01"></line>
+        <line x1="12" y1="15" x2="12" y2="15.01"></line>
+        <line x1="16.5" y1="15" x2="16.5" y2="15.01"></line>
+        <line x1="7.5" y1="19" x2="7.5" y2="19.01"></line>
+        <line x1="12" y1="19" x2="12" y2="19.01"></line>
+        <line x1="16.5" y1="19" x2="16.5" y2="19.01"></line>
+      </svg>
+    </span>Kalkulator
+  </button>
+  <div class="tab-indicator" id="tab-indicator"></div>
 </div>
 
 <script>
@@ -244,8 +305,7 @@ const ENTRY_ITEMS = [
   "Inside bar / area SnR atau SnD sudah ditentukan?",
   "Sudah terjadi retracement / retest ke area tersebut?",
   "Sudah ada konfirmasi (candle rejection / ChoCh & BoS)?",
-  "RR minimal 1:1.5, maksimal 1:3?",
-  "Sudah ada liquidity yang mendukung arah entry?"
+  "RR minimal 1:1.5, maksimal 1:3?"
 ];
 
 const RISK_SECTIONS = [
@@ -266,7 +326,33 @@ const RISK_SECTIONS = [
   ]}
 ];
 
+// Pemetaan nilai default SL acuan awal
+const DEFAULT_SL_MAP = {
+  xauusd: { dollar: 5, pips: 50, points: 500 },
+  btcusd: { dollar: 500, pips: 500, points: 5000 },
+  forex: { dollar: 0.0030, pips: 30, points: 300 }
+};
+
+// Satuan SL terkunci otomatis per instrumen — tidak bisa dipilih manual,
+// supaya tidak ada risiko salah pilih satuan yang berakibat fatal ke lot size.
+const UNIT_MAP = {
+  xauusd: "dollar",
+  btcusd: "dollar",
+  forex: "pips"
+};
+
 /* ---------- STORAGE HELPERS ---------- */
+// Tanggal hari ini dalam zona waktu LOKAL perangkat (bukan UTC).
+// toISOString() bawaan JS selalu pakai UTC, yang bisa bikin tanggal mundur
+// 1 hari untuk WIB/WITA/WIT terutama dini hari sebelum jam 7 pagi.
+function todayLocalISO() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 function loadJSON(key, fallback) {
   try {
     const raw = localStorage.getItem(key);
@@ -278,18 +364,78 @@ function saveJSON(key, value) {
 }
 
 /* ---------- TAB SWITCHING ---------- */
-const tabs = ["checklist", "journal", "calculator"];
-let currentTab = "checklist";
+const tabs = ["statistik", "checklist", "journal", "calculator"];
+let currentTab = "statistik";
+const tabScrollPositions = { statistik: 0, checklist: 0, journal: 0, calculator: 0 };
+
+const TAB_TITLES = {
+  statistik: "Statistik",
+  checklist: "Checklist",
+  journal: "Journal",
+  calculator: "Kalkulator"
+};
+
 function showTab(name) {
+  // Simpan posisi scroll tab yang sedang ditinggalkan, sebelum pindah.
+  if (currentTab) {
+    tabScrollPositions[currentTab] = window.scrollY;
+  }
+
+  const titleEl = document.getElementById("page-title");
+  if (titleEl) titleEl.textContent = TAB_TITLES[name] || "";
+
   currentTab = name;
   tabs.forEach(t => {
-    document.getElementById("view-" + t).style.display = (t === name) ? "block" : "none";
+    const viewEl = document.getElementById("view-" + t);
+    viewEl.style.display = (t === name) ? "block" : "none";
     document.getElementById("tab-" + t).classList.toggle("active", t === name);
   });
-  document.getElementById("fab-export-journal").style.display = (name === "journal") ? "flex" : "none";
+  document.getElementById("fab-export-journal").style.display = (name === "statistik") ? "flex" : "none";
   document.getElementById("fab-reset-checklist").style.display = (name === "checklist") ? "flex" : "none";
+
+  if (name === "calculator") {
+    renderCalculator();
+  }
+  if (name === "journal") {
+    renderJournal();
+  }
+  if (name === "checklist") {
+    renderChecklist();
+  }
+  if (name === "statistik") {
+    renderStatistik();
+  }
+
+  // Animasi masuk halus untuk konten tab yang baru ditampilkan.
+  const activeView = document.getElementById("view-" + name);
+  if (activeView) {
+    activeView.classList.remove("view-fade");
+    void activeView.offsetWidth; // paksa reflow supaya animasi re-trigger tiap pindah tab
+    activeView.classList.add("view-fade");
+  }
+
+  // Geser indikator garis aktif ke posisi tombol tab yang baru, dengan transisi halus.
+  const activeBtn = document.getElementById("tab-" + name);
+  const indicator = document.getElementById("tab-indicator");
+  if (activeBtn && indicator) {
+    indicator.style.left = activeBtn.offsetLeft + (activeBtn.offsetWidth / 2 - 14) + "px";
+    indicator.style.width = "28px";
+  }
+
+  // Pulihkan posisi scroll tab yang baru dibuka (bukan ikut posisi tab sebelumnya).
+  window.scrollTo(0, tabScrollPositions[name] || 0);
 }
 tabs.forEach(t => document.getElementById("tab-" + t).addEventListener("click", () => showTab(t)));
+
+// Set posisi awal indikator begitu halaman selesai dimuat (sebelum showTab pertama sempat menghitung layout).
+window.addEventListener("load", () => {
+  const activeBtn = document.getElementById("tab-" + currentTab);
+  const indicator = document.getElementById("tab-indicator");
+  if (activeBtn && indicator) {
+    indicator.style.left = activeBtn.offsetLeft + (activeBtn.offsetWidth / 2 - 14) + "px";
+    indicator.style.width = "28px";
+  }
+});
 
 document.getElementById("fab-export-journal").addEventListener("click", () => {
   exportToPDF("journal");
@@ -298,7 +444,7 @@ document.getElementById("fab-reset-checklist").addEventListener("click", () => {
   resetChecklist();
 });
 
-/* ---------- EXPORT PDF (pakai print dialog bawaan browser) ---------- */
+/* ---------- EXPORT PDF ---------- */
 function exportToPDF(which) {
   document.body.classList.add("print-" + which);
   window.print();
@@ -309,8 +455,11 @@ window.addEventListener("afterprint", () => {
 });
 
 /* ================= CHECKLIST ================= */
-let entryChecks = loadJSON("checklist-entry", Array(ENTRY_ITEMS.length).fill(false));
-let riskChecks = loadJSON("checklist-risk", RISK_SECTIONS.map(s => Array(s.items.length).fill(false)));
+// Checklist SENGAJA tidak dimuat dari penyimpanan lama — selalu mulai kosong
+// tiap kali aplikasi dibuka ulang (sesuai permintaan: reset otomatis saat
+// pertama kali dibuka, supaya kamu wajib checklist ulang tiap sesi trading).
+let entryChecks = Array(ENTRY_ITEMS.length).fill(false);
+let riskChecks = RISK_SECTIONS.map(s => Array(s.items.length).fill(false));
 
 function renderChecklist() {
   const el = document.getElementById("view-checklist");
@@ -387,16 +536,270 @@ function resetChecklist() {
 let entries = loadJSON("journal-entries", []);
 let editingId = null;
 let saldoAwal = loadJSON("saldo-awal", 0);
+
+// Satuan mata uang yang dipakai di seluruh tampilan nominal (Saldo, Ringkasan,
+// Grafik, Riwayat, Kalkulator) — supaya kamu bisa menyesuaikan dengan satuan
+// yang dipakai di akun trading kamu sendiri (Dollar/Cent).
+const CURRENCY_SYMBOLS = { dollar: "$", cent: "¢" };
+let currencyUnit = loadJSON("currency-unit", "dollar");
+if (!CURRENCY_SYMBOLS[currencyUnit]) currencyUnit = "dollar";
+
+function currencySymbol() {
+  return CURRENCY_SYMBOLS[currencyUnit] || "$";
+}
+
+// Format nominal tanpa tanda + eksplisit (minus otomatis muncul dari angka negatif).
+function formatMoney(value) {
+  const v = parseFloat(value) || 0;
+  const neg = v < 0;
+  const absVal = Math.abs(v);
+  const numStr = absVal.toFixed(2);
+  return (neg ? "-" : "") + currencySymbol() + numStr;
+}
+
+// Sama seperti formatMoney, tapi selalu tampilkan tanda + di depan kalau positif
+// (dipakai untuk P/L, rata-rata profit/loss, dsb).
+function formatMoneySigned(value) {
+  const v = parseFloat(value) || 0;
+  const neg = v < 0;
+  const absVal = Math.abs(v);
+  const numStr = absVal.toFixed(2);
+  return (neg ? "-" : "+") + currencySymbol() + numStr;
+}
+// Status peringatan checklist: false = tampilkan versi singkat saja,
+// true = sudah pernah coba Simpan Trade saat belum lengkap -> tampilkan
+// versi lengkap (daftar poin) dan tetap begitu sampai checklist lengkap lagi.
+let checklistWarningExpanded = false;
 let journalForm = {
-  tanggal: new Date().toISOString().slice(0, 10),
+  tanggal: todayLocalISO(),
   pair: "", arah: "buy", entry: "", sl: "", tp: "", lot: "",
-  hasil: "profit", pl: "", catatan: ""
+  hasil: "profit", pl: "", link: "", catatan: ""
 };
 
 function isChecklistComplete() {
   const entryOk = entryChecks.every(Boolean);
   const riskOk = riskChecks.every(section => section.every(Boolean));
   return entryOk && riskOk;
+}
+
+// Kumpulkan teks semua poin checklist yang BELUM dicentang saat ini —
+// dipakai untuk merekam jejak historis di journal saat trade disimpan.
+function getMissingChecklistItems() {
+  const missing = [];
+  ENTRY_ITEMS.forEach((item, i) => {
+    if (!entryChecks[i]) missing.push(item);
+  });
+  RISK_SECTIONS.forEach((section, sIdx) => {
+    section.items.forEach((item, iIdx) => {
+      if (!riskChecks[sIdx][iIdx]) missing.push(item);
+    });
+  });
+  return missing;
+}
+
+// Bangun grafik equity curve (SVG murni, tanpa library eksternal supaya
+// tetap ringan & jalan offline). Mengelompokkan P/L per tanggal, lalu
+// menghitung saldo kumulatif dari Saldo Awal.
+function buildEquityCurveSVG() {
+  if (entries.length === 0) {
+    return `<p style="font-size:13px;color:var(--muted);">Belum ada data trade untuk ditampilkan grafiknya.</p>`;
+  }
+
+  const byDate = {};
+  entries.forEach(e => {
+    const d = e.tanggal || "";
+    if (!d) return;
+    byDate[d] = (byDate[d] || 0) + (parseFloat(e.pl) || 0);
+  });
+  const dates = Object.keys(byDate).sort();
+
+  let cum = saldoAwal;
+  const points = [{ date: null, cum: saldoAwal, dailyPL: 0 }];
+  dates.forEach(d => {
+    cum += byDate[d];
+    points.push({ date: d, cum, dailyPL: byDate[d] });
+  });
+
+  const W = 600, H = 220, PAD_L = 46, PAD_R = 14, PAD_T = 34, PAD_B = 30;
+  const innerW = W - PAD_L - PAD_R;
+  const innerH = H - PAD_T - PAD_B;
+
+  const values = points.map(p => p.cum);
+  let minV = Math.min(...values, saldoAwal);
+  let maxV = Math.max(...values, saldoAwal);
+  const rangePad = (maxV - minV) * 0.15 || 10;
+  minV -= rangePad; maxV += rangePad;
+
+  const xStep = points.length > 1 ? innerW / (points.length - 1) : 0;
+  const xAt = (i) => PAD_L + i * xStep;
+  const yAt = (v) => PAD_T + innerH - ((v - minV) / (maxV - minV)) * innerH;
+
+  // Gridline & label sumbu Y (5 tick merata)
+  const numTicks = 5;
+  let gridLines = "";
+  for (let t = 0; t <= numTicks; t++) {
+    const val = minV + (maxV - minV) * (t / numTicks);
+    const y = yAt(val);
+    gridLines += `<line x1="${PAD_L}" y1="${y.toFixed(1)}" x2="${W - PAD_R}" y2="${y.toFixed(1)}" style="stroke:var(--line);stroke-width:1;opacity:0.5;" />`;
+    gridLines += `<text x="${PAD_L - 8}" y="${(y + 3).toFixed(1)}" font-size="9" text-anchor="end" style="fill:var(--muted);font-family:inherit;">${Math.round(val)}</text>`;
+  }
+
+  const saldoY = yAt(saldoAwal);
+  const linePoints = points.map((p, i) => `${xAt(i)},${yAt(p.cum)}`).join(" ");
+  const areaPoints = `${xAt(0)},${PAD_T + innerH} ${linePoints} ${xAt(points.length - 1)},${PAD_T + innerH}`;
+
+  const dots = points.map((p, i) => {
+    const color = i === 0 ? "var(--muted)" : (p.dailyPL >= 0 ? "var(--good)" : "var(--danger)");
+    return `<circle cx="${xAt(i)}" cy="${yAt(p.cum)}" r="4" style="fill:${color};stroke:var(--surface);stroke-width:1.5;" />`;
+  }).join("");
+
+  const maxLabels = 5;
+  const labelStep = Math.max(1, Math.ceil((points.length - 1) / maxLabels));
+  let xLabels = "";
+  points.forEach((p, i) => {
+    if (i === 0) return;
+    if (i % labelStep === 0 || i === points.length - 1) {
+      const d = new Date(p.date + "T00:00:00");
+      const label = `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}`;
+      xLabels += `<text x="${xAt(i)}" y="${H - 8}" font-size="10" text-anchor="middle" style="fill:var(--muted);font-family:inherit;">${label}</text>`;
+    }
+  });
+
+  const finalVal = points[points.length - 1].cum;
+  const finalColor = finalVal >= saldoAwal ? "var(--good)" : "var(--danger)";
+
+  return `
+    <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block;" preserveAspectRatio="xMidYMid meet">
+      ${gridLines}
+      <line x1="${PAD_L}" y1="${saldoY.toFixed(1)}" x2="${W - PAD_R}" y2="${saldoY.toFixed(1)}" style="stroke:var(--line);stroke-width:1.3;stroke-dasharray:4,4;" />
+      <text x="${PAD_L + 6}" y="${(saldoY - 6).toFixed(1)}" font-size="9" style="fill:var(--muted);font-family:inherit;">Saldo Awal</text>
+      <polygon points="${areaPoints}" style="fill:var(--good);opacity:0.08;" />
+      <polyline points="${linePoints}" style="fill:none;stroke:var(--good);stroke-width:2.2;stroke-linejoin:round;stroke-linecap:round;" />
+      ${dots}
+      ${xLabels}
+      <text x="${W - PAD_R}" y="${PAD_T - 10}" font-size="21" font-weight="700" text-anchor="end" style="fill:${finalColor};font-family:inherit;">${formatMoney(finalVal)}</text>
+    </svg>
+  `;
+}
+
+// Statistik performa lanjutan: profit factor, rata-rata profit/loss, dan
+// win/loss streak (dihitung dari trade terbaru mundur, berhenti di BE).
+function computeAdvancedStats() {
+  const wins = entries.filter(e => e.hasil === "profit");
+  const losses = entries.filter(e => e.hasil === "loss");
+  const grossProfit = wins.reduce((s, e) => s + (parseFloat(e.pl) || 0), 0);
+  const grossLoss = Math.abs(losses.reduce((s, e) => s + (parseFloat(e.pl) || 0), 0));
+  const profitFactor = grossLoss > 0 ? (grossProfit / grossLoss) : (grossProfit > 0 ? Infinity : 0);
+  const avgWin = wins.length > 0 ? grossProfit / wins.length : 0;
+  const avgLoss = losses.length > 0 ? grossLoss / losses.length : 0;
+
+  let streak = 0, streakType = null;
+  for (let i = 0; i < entries.length; i++) {
+    const h = entries[i].hasil;
+    if (h === "be") break;
+    if (streakType === null) { streakType = h; streak = 1; }
+    else if (h === streakType) { streak++; }
+    else break;
+  }
+
+  return { grossProfit, grossLoss, profitFactor, avgWin, avgLoss, streak, streakType };
+}
+
+// Bar chart P/L per hari (SVG murni), dengan gridline + label sumbu X & Y.
+function buildDailyPLBarChartSVG() {
+  if (entries.length === 0) {
+    return `<p style="font-size:13px;color:var(--muted);">Belum ada data trade untuk ditampilkan grafiknya.</p>`;
+  }
+
+  const byDate = {};
+  entries.forEach(e => {
+    const d = e.tanggal || "";
+    if (!d) return;
+    byDate[d] = (byDate[d] || 0) + (parseFloat(e.pl) || 0);
+  });
+  const dates = Object.keys(byDate).sort();
+  const values = dates.map(d => byDate[d]);
+
+  const W = 600, H = 210, PAD_L = 42, PAD_R = 14, PAD_T = 14, PAD_B = 30;
+  const innerW = W - PAD_L - PAD_R;
+  const innerH = H - PAD_T - PAD_B;
+
+  let maxAbs = Math.max(...values.map(v => Math.abs(v)), 1) * 1.2;
+  const zeroY = PAD_T + innerH / 2;
+  const scale = (innerH / 2) / maxAbs;
+
+  const barSlot = innerW / dates.length;
+  const barWidth = Math.min(34, barSlot * 0.6);
+
+  let gridLines = "";
+  [maxAbs, maxAbs / 2, 0, -maxAbs / 2, -maxAbs].forEach(v => {
+    const y = zeroY - v * scale;
+    const isZero = v === 0;
+    gridLines += `<line x1="${PAD_L}" y1="${y.toFixed(1)}" x2="${W - PAD_R}" y2="${y.toFixed(1)}" style="stroke:var(--line);stroke-width:${isZero ? 1.3 : 1};opacity:${isZero ? 1 : 0.5};" />`;
+    gridLines += `<text x="${PAD_L - 8}" y="${(y + 3).toFixed(1)}" font-size="9" text-anchor="end" fill="var(--muted)">${Math.round(v)}</text>`;
+  });
+
+  let bars = "", xLabels = "";
+  const maxLabels = 6;
+  const labelStep = Math.max(1, Math.ceil(dates.length / maxLabels));
+  dates.forEach((d, i) => {
+    const val = byDate[d];
+    const x = PAD_L + i * barSlot + (barSlot - barWidth) / 2;
+    const barH = Math.max(Math.abs(val) * scale, 1);
+    const y = val >= 0 ? zeroY - barH : zeroY;
+    const color = val >= 0 ? "var(--good)" : "var(--danger)";
+    bars += `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barWidth.toFixed(1)}" height="${barH.toFixed(1)}" fill="${color}" rx="2" />`;
+
+    if (i % labelStep === 0 || i === dates.length - 1) {
+      const dt = new Date(d + "T00:00:00");
+      const label = `${String(dt.getDate()).padStart(2, "0")}/${String(dt.getMonth() + 1).padStart(2, "0")}`;
+      xLabels += `<text x="${(x + barWidth / 2).toFixed(1)}" y="${H - 10}" font-size="9.5" text-anchor="middle" fill="var(--muted)">${label}</text>`;
+    }
+  });
+
+  return `
+    <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block;" preserveAspectRatio="xMidYMid meet">
+      ${gridLines}
+      ${bars}
+      ${xLabels}
+    </svg>
+  `;
+}
+
+// Breakdown performa per pair: jumlah trade, win rate, dan total P/L,
+// diurutkan dari yang paling profit ke paling loss.
+function buildPairBreakdownHTML() {
+  if (entries.length === 0) {
+    return `<p style="font-size:13px;color:var(--muted);">Belum ada data trade untuk ditampilkan.</p>`;
+  }
+  const byPair = {};
+  entries.forEach(e => {
+    const p = (e.pair || "-").toUpperCase();
+    if (!byPair[p]) byPair[p] = { count: 0, wins: 0, totalPL: 0 };
+    byPair[p].count++;
+    if (e.hasil === "profit") byPair[p].wins++;
+    byPair[p].totalPL += (parseFloat(e.pl) || 0);
+  });
+  const pairsSorted = Object.keys(byPair).sort((a, b) => byPair[b].totalPL - byPair[a].totalPL);
+
+  return pairsSorted.map((p, idx) => {
+    const d = byPair[p];
+    const winRate = d.count > 0 ? Math.round((d.wins / d.count) * 100) : 0;
+    const color = d.totalPL >= 0 ? "var(--good)" : "var(--danger)";
+    const borderStyle = idx === pairsSorted.length - 1 ? "border-bottom:none;" : "border-bottom:1px solid var(--line);";
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;${borderStyle}">
+      <div style="flex:1;">
+        <div style="font-size:13px;font-weight:600;">${p}</div>
+        <div style="font-size:10.5px;color:var(--muted);margin-top:2px;">${d.count} trade · Win rate ${winRate}%</div>
+        <div style="background:var(--line);height:5px;border-radius:3px;margin-top:6px;overflow:hidden;">
+          <div style="height:100%;border-radius:3px;width:${winRate}%;background:${color};"></div>
+        </div>
+      </div>
+      <div style="text-align:right;margin-left:14px;">
+        <div style="font-size:15px;font-weight:700;color:${color};">${formatMoneySigned(d.totalPL)}</div>
+      </div>
+    </div>`;
+  }).join("");
 }
 
 function computeStats() {
@@ -408,38 +811,37 @@ function computeStats() {
   return { total, wins, losses, winrate, totalPL };
 }
 
+// Sinkronkan Modal di kalkulator ke Total Saldo terkini (Saldo Awal + Total P/L).
+// Dipanggil setiap kali entries berubah (tambah/edit/hapus/hapus semua) supaya
+// kalkulator selalu pakai angka modal yang paling update, bukan angka basi.
+function syncCalcModalToTotalSaldo() {
+  if (typeof calcState === "undefined") return;
+  calcState.modal = saldoAwal + computeStats().totalPL;
+  saveJSON("calc-modal", calcState.modal);
+  const modalInput = document.getElementById("c-modal");
+  if (modalInput) modalInput.value = calcState.modal;
+  if (typeof updateCalcResults === "function") updateCalcResults();
+}
+
 function renderJournal() {
   const el = document.getElementById("view-journal");
-  const stats = computeStats();
 
-  let html = `<div class="panel dark"><h2>Saldo</h2>
-    <div class="grid2">
-      <div>
-        <div class="stat-label" style="color:#8f8879;">Saldo Awal ($)</div>
-        <input type="number" id="f-saldo-awal" step="0.01" value="${saldoAwal}"
-          style="width:100%;padding:8px 10px;font-family:inherit;font-size:16px;font-weight:700;
-            background:rgba(255,255,255,0.08);color:#f6f4ef;border:1px solid rgba(255,255,255,0.25);margin-top:2px;">
-      </div>
-      <div>
-        <div class="stat-label" style="color:#8f8879;">Total Saldo</div>
-        <div class="big" id="total-saldo-display" style="font-size:26px;color:${(saldoAwal + stats.totalPL)>=0?'#7fbf9e':'#e0a3a3'};">$${(saldoAwal + stats.totalPL).toFixed(2)}</div>
-      </div>
-    </div>
-  </div>`;
+  const checklistOkNow = isChecklistComplete();
+  let gateHtml = "";
+  if (!editingId && !checklistOkNow) {
+    if (checklistWarningExpanded) {
+      const missingNow = getMissingChecklistItems();
+      gateHtml = `⚠ Checklist Belum Lengkap - Trade baru tidak bisa disimpan sebelum semua poin berikut dicentang:
+        <ul style="margin:6px 0 0;padding-left:18px;font-weight:400;line-height:1.5;">
+          ${missingNow.map(item => `<li>${item}</li>`).join("")}
+        </ul>`;
+    } else {
+      gateHtml = "⚠ Checklist Belum Lengkap!";
+    }
+  }
 
-  html += `<div class="panel dark"><h2>Ringkasan</h2>
-    <div class="grid2" style="grid-template-columns:repeat(4,1fr);">
-      <div><div class="stat-label" style="color:#8f8879;">Total Trade</div><div class="big" style="font-size:20px;">${stats.total}</div></div>
-      <div><div class="stat-label" style="color:#8f8879;">Win Rate</div><div class="big" style="font-size:20px;">${stats.winrate}%</div></div>
-      <div><div class="stat-label" style="color:#8f8879;">Menang/Kalah</div><div class="big" style="font-size:20px;">${stats.wins}/${stats.losses}</div></div>
-      <div><div class="stat-label" style="color:#8f8879;">Total P/L</div><div class="big" style="font-size:20px;color:${stats.totalPL>=0?'#7fbf9e':'#e0a3a3'};">${stats.totalPL>=0?'+':''}${stats.totalPL.toFixed(2)}</div></div>
-    </div>
-  </div>`;
-
-  html += `<div class="panel" id="journal-form-panel"><h2>${editingId ? "Edit Trade" : "Catat Trade Baru"}</h2>
-    <div style="margin-bottom:14px;font-size:12.5px;font-weight:600;color:${isChecklistComplete() ? 'var(--good)' : 'var(--danger)'};">
-      ${isChecklistComplete() ? '✓ Checklist saat ini lengkap — status ini akan ikut tersimpan.' : '⚠ Checklist saat ini belum lengkap — status ini akan ikut tersimpan.'}
-    </div>
+  let html = `<div class="panel" id="journal-form-panel"><h2>${editingId ? "Edit Trade" : "Catat Trade Baru"}</h2>
+    <div id="checklist-gate" style="display:${gateHtml ? 'block' : 'none'};margin-bottom:14px;font-size:12.5px;font-weight:600;color:var(--danger);">${gateHtml}</div>
     <div class="grid2">
       <div class="field"><label>Tanggal</label><input type="date" id="f-tanggal" value="${journalForm.tanggal}"></div>
       <div class="field"><label>Pair</label><input type="text" id="f-pair" placeholder="XAUUSD, EURUSD..." value="${journalForm.pair}" style="text-transform:uppercase;" autocapitalize="characters"></div>
@@ -461,6 +863,7 @@ function renderJournal() {
         </select>
       </div>
       <div class="field"><label>P/L ($)</label><input type="number" step="0.01" id="f-pl" value="${journalForm.pl}"></div>
+      <div class="field"><label>Link</label><input type="text" id="f-link" placeholder="https://www.tradingview.com/x/..." value="${journalForm.link || ''}"></div>
     </div>
     <div class="field"><label>Catatan (alasan entry, pelanggaran checklist, dsb.)</label><textarea id="f-catatan">${journalForm.catatan}</textarea></div>
     <div class="btn-row" style="justify-content:flex-start;">
@@ -469,56 +872,11 @@ function renderJournal() {
     </div>
   </div>`;
 
-  html += `<div class="panel"><h2>Riwayat (${entries.length})</h2>`;
-  if (entries.length > 0) {
-    html += `<div class="btn-row" style="justify-content:flex-start;margin-bottom:14px;">
-      <button class="btn-danger-ghost" id="btn-clear-journal">🗑 Hapus Semua Riwayat</button>
-    </div>`;
-  }
-  if (entries.length === 0) {
-    html += `<p style="font-size:13px;color:var(--muted);">Belum ada trade tercatat.</p>`;
-  } else {
-    entries.forEach(e => {
-      const resultColor = e.hasil === "profit" ? "var(--good)" : e.hasil === "loss" ? "var(--danger)" : "var(--muted)";
-      const resultLabel = e.hasil === "profit" ? "Profit" : e.hasil === "loss" ? "Loss" : "BE";
-      const arrow = e.arah === "buy"
-        ? `<span style="color:#2f6fd1;">▲</span>`
-        : `<span style="color:var(--danger);">▼</span>`;
-      const checklistBadge = e.checklistOk
-        ? `<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--good);font-weight:600;">✓ Checklist Terpenuhi</span>`
-        : `<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--danger);font-weight:600;">⚠ Checklist Belum Lengkap</span>`;
-      html += `<div class="entry-card">
-        <div class="entry-top">
-          <div>
-            <div class="entry-title">${arrow} ${e.pair || "-"} · ${e.lot || "0"} lot <span style="font-size:11px;color:var(--muted);font-weight:400;">${e.tanggal}</span></div>
-            <div class="entry-meta">Entry ${e.entry || "-"} · SL ${e.sl || "-"} · TP ${e.tp || "-"}</div>
-            <div style="margin-top:5px;">${checklistBadge}</div>
-            ${e.catatan ? `<div class="entry-note">${e.catatan}</div>` : ""}
-          </div>
-          <div class="entry-result">
-            <div style="color:${resultColor};">${resultLabel}${e.pl ? ` (${e.pl>=0?'+':''}${e.pl})` : ""}</div>
-            <button class="entry-edit" data-id="${e.id}">✏️ Edit</button>
-            <button class="entry-del" data-id="${e.id}">🗑 Hapus</button>
-          </div>
-        </div>
-      </div>`;
-    });
-  }
-  html += `</div>`;
-
   el.innerHTML = html;
 
-  document.getElementById("f-saldo-awal").addEventListener("input", (e) => {
-    saldoAwal = parseFloat(e.target.value) || 0;
-    saveJSON("saldo-awal", saldoAwal);
-    const totalSaldo = saldoAwal + computeStats().totalPL;
-    const displayEl = document.getElementById("total-saldo-display");
-    displayEl.textContent = "$" + totalSaldo.toFixed(2);
-    displayEl.style.color = totalSaldo >= 0 ? "#7fbf9e" : "#e0a3a3";
-  });
-
-  ["tanggal","pair","arah","lot","entry","sl","tp","hasil","pl","catatan"].forEach(field => {
+  ["tanggal","pair","arah","lot","entry","sl","tp","hasil","pl","link","catatan"].forEach(field => {
     const node = document.getElementById("f-" + field);
+    if (!node) return;
     node.addEventListener("input", () => {
       if (field === "pair") {
         const pos = node.selectionStart;
@@ -549,19 +907,49 @@ function renderJournal() {
 
   document.getElementById("btn-add-entry").addEventListener("click", () => {
     if (!journalForm.pair) return;
+    if (!editingId && !isChecklistComplete()) {
+      checklistWarningExpanded = true;
+      renderJournal();
+      const gate = document.getElementById("checklist-gate");
+      if (gate) {
+        gate.scrollIntoView({ behavior: "smooth", block: "center" });
+        gate.style.outline = "2px solid var(--danger)";
+        gate.style.outlineOffset = "4px";
+        setTimeout(() => { gate.style.outline = "none"; }, 1200);
+      }
+      return;
+    }
+    const wasEditing = !!editingId;
+    let isNewEntry = false;
     if (editingId) {
-      entries = entries.map(e => e.id === editingId ? Object.assign({}, e, journalForm, { checklistOk: isChecklistComplete() }) : e);
+      entries = entries.map(e => e.id === editingId ? Object.assign({}, e, journalForm) : e);
       editingId = null;
     } else {
-      entries.unshift(Object.assign({}, journalForm, { id: Date.now(), checklistOk: isChecklistComplete() }));
+      entries.unshift(Object.assign({}, journalForm, { id: Date.now() }));
+      isNewEntry = true;
     }
     saveJSON("journal-entries", entries);
+    syncCalcModalToTotalSaldo();
+    if (isNewEntry) {
+      // Reset checklist otomatis setelah trade baru berhasil disimpan,
+      // supaya wajib checklist ulang dari nol untuk trade berikutnya.
+      // Pakai resetChecklist() (bukan reset manual) supaya tampilan
+      // checkbox di tab Checklist ikut ter-refresh juga.
+      resetChecklist();
+      checklistWarningExpanded = false;
+    }
     journalForm = {
-      tanggal: new Date().toISOString().slice(0, 10),
+      tanggal: todayLocalISO(),
       pair: "", arah: "buy", entry: "", sl: "", tp: "", lot: "",
-      hasil: "profit", pl: "", catatan: ""
+      hasil: "profit", pl: "", link: "", catatan: ""
     };
-    renderJournal();
+    if (wasEditing) {
+      // Trade yang diedit berasal dari tab Statistik -> kembali ke sana
+      // supaya langsung terlihat hasil update-nya di Riwayat.
+      showTab("statistik");
+    } else {
+      renderJournal();
+    }
   });
 
   const cancelBtn = document.getElementById("btn-cancel-edit");
@@ -569,13 +957,143 @@ function renderJournal() {
     cancelBtn.addEventListener("click", () => {
       editingId = null;
       journalForm = {
-        tanggal: new Date().toISOString().slice(0, 10),
+        tanggal: todayLocalISO(),
         pair: "", arah: "buy", entry: "", sl: "", tp: "", lot: "",
-        hasil: "profit", pl: "", catatan: ""
+        hasil: "profit", pl: "", link: "", catatan: ""
       };
-      renderJournal();
+      showTab("statistik");
     });
   }
+}
+
+/* ================= STATISTIK ================= */
+function renderStatistik() {
+  const el = document.getElementById("view-statistik");
+  const stats = computeStats();
+  const adv = computeAdvancedStats();
+
+  let html = `<div class="panel dark"><h2>Saldo</h2>
+    <div class="grid2">
+      <div>
+        <div class="stat-label">Saldo Awal (${currencySymbol()})</div>
+        <input type="number" id="f-saldo-awal" step="0.01" value="${saldoAwal}"
+          style="width:100%;padding:8px 10px;font-family:inherit;font-size:16px;font-weight:700;
+            background:var(--input-bg);color:var(--text);border:1px solid var(--line);margin-top:2px;">
+      </div>
+      <div>
+        <div class="stat-label">Total Saldo</div>
+        <div class="big" id="total-saldo-display" style="font-size:26px;color:${(saldoAwal + stats.totalPL)>=0?'var(--good)':'var(--danger)'};">${formatMoney(saldoAwal + stats.totalPL)}</div>
+      </div>
+    </div>
+    <div class="field" style="margin-top:16px;margin-bottom:0;">
+      <div class="stat-label" style="margin-bottom:6px;">Satuan Mata Uang</div>
+      <select id="f-currency-unit" style="width:100%;padding:10px 12px;font-family:inherit;font-size:14px;background:var(--input-bg);color:var(--text);border:1px solid var(--line);">
+        <option value="dollar" ${currencyUnit==='dollar'?'selected':''}>Dollar ($)</option>
+        <option value="cent" ${currencyUnit==='cent'?'selected':''}>Cent (¢)</option>
+      </select>
+    </div>
+  </div>`;
+
+  html += `<div class="panel dark"><h2>Ringkasan</h2>
+    <div class="grid2" style="grid-template-columns:repeat(4,1fr);">
+      <div><div class="stat-label">Total Trade</div><div class="big" style="font-size:20px;">${stats.total}</div></div>
+      <div><div class="stat-label">Win Rate</div><div class="big" style="font-size:20px;">${stats.winrate}%</div></div>
+      <div><div class="stat-label">Menang/Kalah</div><div class="big" style="font-size:20px;">${stats.wins}/${stats.losses}</div></div>
+      <div><div class="stat-label">Total P/L</div><div class="big" style="font-size:20px;color:${stats.totalPL>=0?'var(--good)':'var(--danger)'};">${formatMoneySigned(stats.totalPL)}</div></div>
+    </div>
+  </div>`;
+
+  const pfDisplay = entries.length === 0 ? "-" : (adv.profitFactor === Infinity ? "∞" : adv.profitFactor.toFixed(2));
+  const streakDisplay = (entries.length === 0 || !adv.streakType) ? "-" : `${adv.streak}${adv.streakType === "profit" ? "W" : "L"}`;
+  const streakColor = adv.streakType === "profit" ? "var(--good)" : (adv.streakType === "loss" ? "var(--danger)" : "var(--muted)");
+
+  html += `<div class="panel dark"><h2>Ringkasan Performa</h2>
+    <div class="grid2" style="grid-template-columns:repeat(4,1fr);">
+      <div><div class="stat-label">Profit Factor</div><div class="big" style="font-size:20px;color:var(--good);">${pfDisplay}</div></div>
+      <div><div class="stat-label">Win/Loss Streak</div><div class="big" style="font-size:20px;color:${streakColor};">${streakDisplay}</div></div>
+      <div><div class="stat-label">Rata-rata Profit</div><div class="big" style="font-size:20px;color:var(--good);">${formatMoneySigned(adv.avgWin)}</div></div>
+      <div><div class="stat-label">Rata-rata Loss</div><div class="big" style="font-size:20px;color:var(--danger);">${formatMoneySigned(-adv.avgLoss)}</div></div>
+    </div>
+  </div>`;
+
+  html += `<div class="panel dark"><h2>Grafik Equity</h2>
+    ${buildEquityCurveSVG()}
+  </div>`;
+
+  html += `<div class="panel dark"><h2>P/L Harian</h2>
+    ${buildDailyPLBarChartSVG()}
+  </div>`;
+
+  html += `<div class="panel dark"><h2>Breakdown per Pair</h2>
+    ${buildPairBreakdownHTML()}
+  </div>`;
+
+  html += `<div class="panel"><h2>Riwayat (${entries.length})</h2>`;
+  if (entries.length > 0) {
+    html += `<div class="btn-row" style="justify-content:flex-start;margin-bottom:14px;">
+      <button class="btn-danger-ghost" id="btn-clear-journal">🗑 Hapus Semua Riwayat</button>
+    </div>`;
+  }
+  if (entries.length === 0) {
+    html += `<p style="font-size:13px;color:var(--muted);">Belum ada trade tercatat.</p>`;
+  } else {
+    entries.forEach(e => {
+      const resultColor = e.hasil === "profit" ? "var(--good)" : e.hasil === "loss" ? "var(--danger)" : "var(--muted)";
+      const resultLabel = e.hasil === "profit" ? "Profit" : e.hasil === "loss" ? "Loss" : "BE";
+      const arrow = e.arah === "buy"
+        ? `<span style="color:#2f6fd1;">▲ Buy</span>`
+        : `<span style="color:var(--danger);">▼ Sell</span>`;
+      const linkUrl = e.link ? (e.link.startsWith('http://') || e.link.startsWith('https://') ? e.link : 'https://' + e.link) : '';
+      const linkHtml = linkUrl ? `<a href="${linkUrl}" target="_blank" rel="noopener noreferrer" class="entry-link">🔗 Chart TradingView</a>` : '';
+
+      html += `<div class="entry-card">
+        <div class="entry-top">
+          <div>
+            <div class="entry-title">${arrow} ${e.pair || "-"} · ${e.lot || "0"} lot <span style="font-size:11px;color:var(--muted);font-weight:400;">${e.tanggal}</span></div>
+            <div class="entry-meta">Entry ${e.entry || "-"} · SL ${e.sl || "-"} · TP ${e.tp || "-"}</div>
+            ${e.catatan ? `<div class="entry-note" style="margin-top:5px;">${e.catatan}</div>` : ""}
+            ${linkHtml}
+          </div>
+          <div class="entry-result">
+            <div style="color:${resultColor};">${resultLabel}${e.pl ? ` (${formatMoneySigned(e.pl)})` : ""}</div>
+            <button class="entry-edit" data-id="${e.id}">✏️ Edit</button>
+            <button class="entry-del" data-id="${e.id}">🗑 Hapus</button>
+          </div>
+        </div>
+      </div>`;
+    });
+  }
+  html += `</div>`;
+
+  el.innerHTML = html;
+
+  document.getElementById("f-currency-unit").addEventListener("change", (e) => {
+    currencyUnit = e.target.value;
+    saveJSON("currency-unit", currencyUnit);
+    renderStatistik();
+  });
+
+  document.getElementById("f-saldo-awal").addEventListener("input", (e) => {
+    saldoAwal = parseFloat(e.target.value) || 0;
+    saveJSON("saldo-awal", saldoAwal);
+
+    const totalSaldo = saldoAwal + computeStats().totalPL;
+
+    calcState.modal = totalSaldo;
+    saveJSON("calc-modal", calcState.modal);
+
+    const displayEl = document.getElementById("total-saldo-display");
+    if (displayEl) {
+      displayEl.textContent = formatMoney(totalSaldo);
+      displayEl.style.color = totalSaldo >= 0 ? "var(--good)" : "var(--danger)";
+    }
+
+    const cModalInput = document.getElementById("c-modal");
+    if (cModalInput) {
+      cModalInput.value = calcState.modal;
+    }
+    updateCalcResults();
+  });
 
   el.querySelectorAll(".entry-edit").forEach(btn => {
     btn.addEventListener("click", () => {
@@ -586,10 +1104,13 @@ function renderJournal() {
       journalForm = {
         tanggal: target.tanggal, pair: target.pair, arah: target.arah,
         entry: target.entry, sl: target.sl, tp: target.tp, lot: target.lot,
-        hasil: target.hasil, pl: target.pl, catatan: target.catatan
+        hasil: target.hasil, pl: target.pl, link: target.link || "", catatan: target.catatan
       };
-      renderJournal();
-      document.getElementById("journal-form-panel").scrollIntoView({ behavior: "smooth", block: "start" });
+      showTab("journal");
+      setTimeout(() => {
+        const panel = document.getElementById("journal-form-panel");
+        if (panel) panel.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 60);
     });
   });
 
@@ -599,7 +1120,8 @@ function renderJournal() {
       entries = entries.filter(e => e.id !== id);
       if (editingId === id) editingId = null;
       saveJSON("journal-entries", entries);
-      renderJournal();
+      syncCalcModalToTotalSaldo();
+      renderStatistik();
     });
   });
 
@@ -609,25 +1131,128 @@ function renderJournal() {
       if (confirm("Hapus semua riwayat jurnal? Tindakan ini tidak bisa dibatalkan.")) {
         entries = [];
         saveJSON("journal-entries", entries);
-        renderJournal();
+        syncCalcModalToTotalSaldo();
+        renderStatistik();
       }
     });
   }
 }
 
+
 /* ================= CALCULATOR ================= */
-let calcState = { modal: 1000, pair: "xauusd", riskPct: 1, sl: 5 };
+const savedCalcModal = loadJSON("calc-modal", null);
+const savedCalcSl = loadJSON("calc-sl", null);
+const savedCalcPair = loadJSON("calc-pair", "xauusd");
+const savedCalcRiskPct = loadJSON("calc-risk-pct", 1);
+const savedCalcUnit = UNIT_MAP[savedCalcPair];
+const initialTotalSaldo = saldoAwal + computeStats().totalPL;
+
+let calcState = { 
+  modal: (initialTotalSaldo > 0) ? initialTotalSaldo : (savedCalcModal !== null ? savedCalcModal : 1000), 
+  pair: savedCalcPair, 
+  riskPct: savedCalcRiskPct, 
+  slUnit: savedCalcUnit, 
+  sl: (savedCalcSl !== null) ? savedCalcSl : DEFAULT_SL_MAP[savedCalcPair][savedCalcUnit]
+};
+
+function getSlHint(pair, unit) {
+  if (unit === 'dollar') {
+    if (pair === 'xauusd') return '💡 Contoh: 5 (artinya $5.00 pergerakan harga Gold)';
+    if (pair === 'btcusd') return '💡 Contoh: 500 (artinya $500.00 pergerakan harga Bitcoin)';
+  }
+  if (unit === 'pips') {
+    return '💡 Contoh: 30 pips (standar universal untuk Forex, 1 pip = 0.0001)';
+  }
+  return '';
+}
+
+function updateCalcResults() {
+  const riskAmount = calcState.modal * (calcState.riskPct / 100);
+  let lot = 0;
+  let pipValThisLot = 0;
+  let pipValLabel = "Nilai per $1 pergerakan";
+
+  const sl = calcState.sl;
+  const unit = calcState.slUnit || "dollar";
+  const pair = calcState.pair;
+
+  if (sl > 0) {
+    if (pair === "xauusd") {
+      if (unit === "dollar") {
+        lot = riskAmount / (sl * 100);
+        pipValThisLot = 100 * lot;
+        pipValLabel = "Nilai per $1.00 pergerakan";
+      } else if (unit === "pips") {
+        lot = riskAmount / (sl * 10);
+        pipValThisLot = 10 * lot;
+        pipValLabel = "Nilai per 1 pip ($0.10)";
+      } else { // points
+        lot = riskAmount / (sl * 1);
+        pipValThisLot = 1 * lot;
+        pipValLabel = "Nilai per 1 poin ($0.01)";
+      }
+    } else if (pair === "btcusd") {
+      if (unit === "dollar") {
+        lot = riskAmount / (sl * 1);
+        pipValThisLot = 1 * lot;
+        pipValLabel = "Nilai per $1.00 pergerakan";
+      } else if (unit === "pips") {
+        lot = riskAmount / (sl * 1);
+        pipValThisLot = 1 * lot;
+        pipValLabel = "Nilai per 1 pip ($1.00)";
+      } else { // points
+        lot = riskAmount / (sl * 0.1);
+        pipValThisLot = 0.1 * lot;
+        pipValLabel = "Nilai per 1 poin ($0.10)";
+      }
+    } else if (pair === "forex") {
+      // PERBAIKAN: dulu ada "sl >= 1 ? sl/10000 : sl" yang menebak-nebak
+      // satuan berdasarkan besar angka -> menyebabkan lompatan lot ekstrem
+      // di sekitar sl=1. Sekarang "dollar" selalu diperlakukan sebagai
+      // nilai desimal harga apa adanya, konsisten untuk semua nilai.
+      if (unit === "dollar") {
+        lot = riskAmount / (sl * 100000);
+        pipValThisLot = 10 * lot;
+        pipValLabel = "Nilai per 1 pip (0.0001)";
+      } else if (unit === "pips") {
+        lot = riskAmount / (sl * 10);
+        pipValThisLot = 10 * lot;
+        pipValLabel = "Nilai per 1 pip";
+      } else { // points
+        lot = riskAmount / (sl * 1);
+        pipValThisLot = 1 * lot;
+        pipValLabel = "Nilai per 1 poin";
+      }
+    }
+  }
+
+  const belowMin = lot > 0 && lot < 0.01;
+
+  const lotEl = document.getElementById("calc-lot-display");
+  const riskEl = document.getElementById("calc-risk-display");
+  const pipValEl = document.getElementById("calc-pipval-display");
+  const pipValLabelEl = document.getElementById("calc-pipval-label");
+  const warnEl = document.getElementById("calc-warn");
+
+  if (lotEl) lotEl.innerHTML = `${lot.toFixed(3)} <span>lot</span>`;
+  if (riskEl) riskEl.textContent = formatMoney(riskAmount);
+  if (pipValEl) pipValEl.textContent = formatMoney(pipValThisLot);
+  if (pipValLabelEl) pipValLabelEl.textContent = pipValLabel;
+  if (warnEl) warnEl.classList.toggle("show", belowMin);
+}
 
 function renderCalculator() {
   const el = document.getElementById("view-calculator");
-  const riskAmount = calcState.modal * (calcState.riskPct / 100);
-  const pipValuePerLot = calcState.pair === "forex" ? 10 : calcState.pair === "xauusd" ? 100 : 1;
-  const lot = calcState.sl > 0 ? riskAmount / (calcState.sl * pipValuePerLot) : 0;
-  const pipValThisLot = pipValuePerLot * lot;
-  const belowMin = lot > 0 && lot < 0.01;
+  const currentTotalSaldo = saldoAwal + computeStats().totalPL;
 
   let html = `<div class="panel"><h2>Modal &amp; Instrumen</h2>
-    <div class="field"><label>Modal ($)</label><input type="number" id="c-modal" value="${calcState.modal}"></div>
+    <div class="field">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+        <label style="margin-bottom:0;">Modal (${currencySymbol()})</label>
+        ${currentTotalSaldo > 0 ? `<button type="button" id="btn-sync-saldo" style="background:none;border:none;color:var(--accent2);font-size:11px;cursor:pointer;padding:0;text-decoration:underline;">↺ Pakai Total Saldo (${formatMoney(currentTotalSaldo)})</button>` : ''}
+      </div>
+      <input type="number" id="c-modal" value="${calcState.modal}">
+    </div>
     <div class="field"><label>Pasangan / Instrumen</label>
       <div class="toggle">
         <button data-pair="xauusd" class="${calcState.pair==='xauusd'?'active':''}">XAUUSD (Gold)</button>
@@ -643,46 +1268,85 @@ function renderCalculator() {
         ${[0.5,1,1.5,2].map(r => `<button data-risk="${r}" class="${calcState.riskPct===r?'active':''}">${r}%</button>`).join("")}
       </div>
     </div>
-    <div class="field"><label>${calcState.pair==='forex' ? 'Jarak SL (pips)' : 'Jarak SL ($ / poin harga)'}</label>
-      <input type="number" id="c-sl" value="${calcState.sl}">
+    <div class="field">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+        <label style="margin-bottom:0;">Jarak SL</label>
+        <span style="font-size:11px;font-weight:600;color:var(--accent2);background:rgba(31,122,77,0.12);padding:3px 8px;border-radius:10px;">
+          🔒 Satuan: ${calcState.slUnit === 'dollar' ? 'Dollar ($)' : 'Pips'} — otomatis
+        </span>
+      </div>
+      <input type="number" id="c-sl" value="${calcState.sl}" step="any">
+      <div style="font-size:11px;color:var(--muted);margin-top:4px;" id="c-sl-hint">
+        ${getSlHint(calcState.pair, calcState.slUnit)}
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-top:6px;font-style:italic;">
+        Satuan mengikuti instrumen yang dipilih secara otomatis, supaya tidak ada risiko salah pilih satuan yang berakibat fatal ke perhitungan lot.
+      </div>
     </div>
   </div>`;
 
   html += `<div class="panel dark"><h2>Hasil</h2>
-    <div class="stat-label" style="color:#8f8879;">Lot size yang dipakai</div>
-    <div class="big">${lot.toFixed(3)} <span>lot</span></div>
+    <div class="stat-label">Lot size yang dipakai</div>
+    <div class="big" id="calc-lot-display">0.000 <span>lot</span></div>
     <div class="grid2" style="margin-top:16px;">
-      <div><div class="stat-label" style="color:#8f8879;">Risk amount</div><div class="stat-val">$${riskAmount.toFixed(2)}</div></div>
-      <div><div class="stat-label" style="color:#8f8879;">Nilai per pip (lot ini)</div><div class="stat-val">$${pipValThisLot.toFixed(2)}</div></div>
+      <div><div class="stat-label">Risk amount</div><div class="stat-val" id="calc-risk-display">$0.00</div></div>
+      <div><div class="stat-label" id="calc-pipval-label">Nilai per $1 pergerakan</div><div class="stat-val" id="calc-pipval-display">$0.00</div></div>
     </div>
-    <div class="warn ${belowMin ? 'show' : ''}">Lot di bawah minimum umum broker (0.01). Perbesar % risk atau cari setup dengan SL lebih sempit.</div>
+    <div class="warn" id="calc-warn">Lot di bawah minimum umum broker (0.01). Perbesar % risk atau cari setup dengan SL lebih sempit.</div>
   </div>`;
 
-  html += `<p class="note-text">Rumus XAUUSD: Lot = Risk ÷ (Jarak SL $ × $100/lot). Rumus BTCUSD: Lot = Risk ÷ (Jarak SL $ × $1/lot, asumsi 1 lot = 1 BTC). Rumus Forex: Lot = Risk ÷ (Jarak SL pips × $10/pip). Cek Contract Specification broker kamu — nilai kontrak bisa berbeda, terutama untuk BTCUSD yang variasinya besar antar broker.</p>`;
+  html += `<p class="note-text">Rumus XAUUSD: Lot = Risk ÷ (Jarak SL $ × $100/lot). Rumus BTCUSD: Lot = Risk ÷ (Jarak SL $ × $1/lot, asumsi 1 lot = 1 BTC). Rumus Forex: Lot = Risk ÷ (Jarak SL $ × $100.000/lot). Cek Contract Specification broker kamu — nilai kontrak bisa berbeda antar broker.</p>`;
 
   el.innerHTML = html;
 
+  const syncBtn = document.getElementById("btn-sync-saldo");
+  if (syncBtn) {
+    syncBtn.addEventListener("click", () => {
+      calcState.modal = saldoAwal + computeStats().totalPL;
+      saveJSON("calc-modal", calcState.modal);
+      const modalInput = document.getElementById("c-modal");
+      if (modalInput) modalInput.value = calcState.modal;
+      updateCalcResults();
+    });
+  }
+
   document.getElementById("c-modal").addEventListener("input", (e) => {
     calcState.modal = parseFloat(e.target.value) || 0;
-    renderCalculator();
+    saveJSON("calc-modal", calcState.modal);
+    updateCalcResults();
   });
+
   document.getElementById("c-sl").addEventListener("input", (e) => {
     calcState.sl = parseFloat(e.target.value) || 0;
-    renderCalculator();
+    saveJSON("calc-sl", calcState.sl);
+    updateCalcResults();
   });
+
+  // Event listener saat berpindah Instrumen/Pair -> Satuan SL otomatis mengikuti UNIT_MAP,
+  // nilai SL direset ke default yang sesuai untuk satuan tersebut.
   el.querySelectorAll("[data-pair]").forEach(btn => {
     btn.addEventListener("click", () => {
-      calcState.pair = btn.dataset.pair;
-      calcState.sl = calcState.pair === "forex" ? 20 : calcState.pair === "xauusd" ? 5 : 100;
-      renderCalculator();
+      const newPair = btn.dataset.pair;
+      if (newPair !== calcState.pair) {
+        calcState.pair = newPair;
+        calcState.slUnit = UNIT_MAP[newPair];
+        calcState.sl = DEFAULT_SL_MAP[newPair][calcState.slUnit];
+        saveJSON("calc-pair", newPair);
+        saveJSON("calc-sl", calcState.sl);
+        renderCalculator();
+      }
     });
   });
+
   el.querySelectorAll("[data-risk]").forEach(btn => {
     btn.addEventListener("click", () => {
       calcState.riskPct = parseFloat(btn.dataset.risk);
+      saveJSON("calc-risk-pct", calcState.riskPct);
       renderCalculator();
     });
   });
+
+  updateCalcResults();
 }
 
 /* ---------- THEME TOGGLE ---------- */
@@ -695,6 +1359,10 @@ function applyTheme(mode) {
     document.body.classList.remove("theme-dark");
     btn.textContent = "🌙";
   }
+  // Set eksplisit di <html> (bukan cuma lewat CSS class di body) supaya
+  // dropdown native (<select>, date picker, dsb) ikut warna tema di
+  // Chromium/Android — sebagian browser cuma baca color-scheme dari root.
+  document.documentElement.style.colorScheme = mode === "dark" ? "dark" : "light";
   const metaTheme = document.querySelector('meta[name="theme-color"]');
   if (metaTheme) metaTheme.setAttribute("content", mode === "dark" ? "#10161d" : "#1b2430");
 }
@@ -711,11 +1379,113 @@ document.getElementById("theme-toggle").addEventListener("click", () => {
   applyTheme(themePref);
 });
 
+/* ---------- SWIPE KIRI/KANAN UNTUK PINDAH TAB ---------- */
+// Usap ke kiri = pindah ke tab berikutnya, usap ke kanan = tab sebelumnya.
+// Sengaja TIDAK mengecualikan elemen awal sentuhan (input/tombol/dsb) —
+// ketukan biasa (tap) hampir tidak ada pergeseran jarak, jadi otomatis
+// tidak lolos ambang batas jarak di bawah. Ini supaya swipe tetap berfungsi
+// walau dimulai tepat di atas tombol/kolom yang bisa diklik.
+let swipeStartX = 0, swipeStartY = 0;
+
+document.addEventListener("touchstart", (e) => {
+  if (e.touches.length !== 1) return;
+  swipeStartX = e.touches[0].clientX;
+  swipeStartY = e.touches[0].clientY;
+}, { passive: true });
+
+document.addEventListener("touchend", (e) => {
+  if (e.changedTouches.length !== 1) return;
+
+  const dx = e.changedTouches[0].clientX - swipeStartX;
+  const dy = e.changedTouches[0].clientY - swipeStartY;
+  const absDx = Math.abs(dx), absDy = Math.abs(dy);
+
+  const SWIPE_MIN_DISTANCE = 35;
+  if (absDx < SWIPE_MIN_DISTANCE || absDx < absDy * 1.1) return;
+
+  const idx = tabs.indexOf(currentTab);
+  if (dx < 0 && idx < tabs.length - 1) {
+    showTab(tabs[idx + 1]); // usap kiri -> tab berikutnya
+  } else if (dx > 0 && idx > 0) {
+    showTab(tabs[idx - 1]); // usap kanan -> tab sebelumnya
+  }
+}, { passive: true });
+
+/* ---------- HINDARI FIELD KETUTUP KEYBOARD ---------- */
+// Setiap kali input/select/textarea di-fokus, scroll otomatis ke tengah layar
+// yang masih terlihat. Pakai event delegation supaya berlaku juga untuk field
+// yang di-render ulang (form journal, kalkulator, dsb).
+function scrollFocusedFieldIntoView(el) {
+  if (!el) return;
+  const tag = el.tagName;
+  if (tag !== "INPUT" && tag !== "SELECT" && tag !== "TEXTAREA") return;
+  setTimeout(() => {
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, 300);
+}
+
+document.addEventListener("focusin", (e) => {
+  scrollFocusedFieldIntoView(e.target);
+});
+
+// Saat pindah dari kolom teks/angka (yang butuh keyboard) ke dropdown (select,
+// yang pakai picker native, bukan keyboard), kadang keyboard software Android
+// tertinggal terbuka sesaat. Trik blur+refocus ini memaksa keyboard menutup
+// dengan benar sebelum picker dropdown-nya muncul.
+document.addEventListener("focusout", (e) => {
+  const leavingField = e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA";
+  if (!leavingField) return;
+  setTimeout(() => {
+    const next = document.activeElement;
+    if (next && next.tagName === "SELECT") {
+      next.blur();
+      setTimeout(() => next.focus(), 30);
+    }
+  }, 50);
+});
+
+// Reaksi lebih presisi: begitu keyboard software BENAR-BENAR muncul (area
+// layar menyusut signifikan), posisikan ulang field yang sedang aktif.
+// PENTING: scroll biasa di HP juga memicu event ini (address bar browser
+// collapse/muncul saat scroll) — makanya kita cek dulu penyusutannya cukup
+// besar (>150px, ciri khas keyboard) supaya tidak salah trigger saat scroll.
+//
+// Sekalian geser bottom nav + FAB supaya selalu nempel di atas keyboard
+// (mengambang, tidak ketutup) — dihitung dari selisih tinggi viewport
+// sekarang dengan tinggi normal (baseline) saat halaman pertama dimuat.
+
+function repositionForKeyboard() {
+  if (!window.visualViewport) return;
+  const keyboardHeight = Math.max(0, window.innerHeight - window.visualViewport.height - window.visualViewport.offsetTop);
+  const offset = keyboardHeight > 100 ? keyboardHeight : 0;
+  const tabsEl = document.querySelector(".tabs");
+  if (tabsEl) tabsEl.style.bottom = offset + "px";
+  const fabExport = document.getElementById("fab-export-journal");
+  const fabReset = document.getElementById("fab-reset-checklist");
+  const fabBottom = (offset > 0 ? offset + 82 : 82) + "px";
+  if (fabExport) fabExport.style.bottom = fabBottom;
+  if (fabReset) fabReset.style.bottom = fabBottom;
+}
+
+if (window.visualViewport) {
+  let lastViewportHeight = window.visualViewport.height;
+
+  window.visualViewport.addEventListener("resize", () => {
+    const newHeight = window.visualViewport.height;
+    const shrunk = lastViewportHeight - newHeight;
+    lastViewportHeight = newHeight;
+    if (shrunk > 150) {
+      scrollFocusedFieldIntoView(document.activeElement);
+    }
+    repositionForKeyboard();
+  });
+}
+
 /* ---------- INIT ---------- */
 renderChecklist();
 renderJournal();
 renderCalculator();
-showTab("checklist");
+showTab("statistik");
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
