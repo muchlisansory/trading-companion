@@ -195,6 +195,7 @@
   }
   .fab:active{transform:scale(0.94);}
   .fab-danger{background:var(--danger);}
+  .tabs, .fab { transition: bottom .15s ease; }
 
 
   @media print {
@@ -1449,10 +1450,24 @@ document.addEventListener("focusout", (e) => {
 // collapse/muncul saat scroll) — makanya kita cek dulu penyusutannya cukup
 // besar (>150px, ciri khas keyboard) supaya tidak salah trigger saat scroll.
 //
-// Bottom nav SENGAJA dibiarkan diam di posisi fixed bawah (tanpa JS yang
-// coba menghitung/menggeser posisinya mengikuti keyboard) — mekanisme itu
-// terbukti tidak konsisten di berbagai browser/HP, jadi lebih stabil pakai
-// perilaku native browser apa adanya.
+// Bottom nav dipantau TERUS-MENERUS (bukan cuma sekali saat keyboard
+// muncul) supaya presisi menempel di tepi bawah area yang BENAR-BENAR
+// terlihat — termasuk saat kamu scroll sambil keyboard masih terbuka
+// (posisi area terlihat bisa bergeser saat itu, dan position:fixed biasa
+// tidak otomatis mengikuti pergeseran itu di banyak browser Android).
+function positionTabsAboveKeyboard() {
+  if (!window.visualViewport) return;
+  const vv = window.visualViewport;
+  const offsetFromBottom = Math.max(0, window.innerHeight - (vv.height + vv.offsetTop));
+  const tabsEl = document.querySelector(".tabs");
+  if (tabsEl) tabsEl.style.bottom = offsetFromBottom + "px";
+  const fabExport = document.getElementById("fab-export-journal");
+  const fabReset = document.getElementById("fab-reset-checklist");
+  const fabBottom = (offsetFromBottom > 0 ? offsetFromBottom + 82 : 82) + "px";
+  if (fabExport) fabExport.style.bottom = fabBottom;
+  if (fabReset) fabReset.style.bottom = fabBottom;
+}
+
 if (window.visualViewport) {
   let lastViewportHeight = window.visualViewport.height;
 
@@ -1463,8 +1478,15 @@ if (window.visualViewport) {
     if (shrunk > 150) {
       scrollFocusedFieldIntoView(document.activeElement);
     }
+    positionTabsAboveKeyboard();
   });
+
+  // Dengarkan juga event scroll KHUSUS milik visualViewport (bukan window) —
+  // ini yang menangkap pergeseran saat kamu scroll ketika keyboard terbuka.
+  window.visualViewport.addEventListener("scroll", positionTabsAboveKeyboard);
 }
+
+positionTabsAboveKeyboard();
 
 /* ---------- INIT ---------- */
 renderChecklist();
