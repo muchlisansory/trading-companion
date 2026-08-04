@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=overlays-content">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -196,7 +196,6 @@
   .fab:active{transform:scale(0.94);}
   .fab-danger{background:var(--danger);}
 
-  .tabs, .fab { transition: bottom .2s ease; }
 
   @media print {
     body.theme-dark{
@@ -1450,34 +1449,10 @@ document.addEventListener("focusout", (e) => {
 // collapse/muncul saat scroll) — makanya kita cek dulu penyusutannya cukup
 // besar (>150px, ciri khas keyboard) supaya tidak salah trigger saat scroll.
 //
-// Sekalian geser bottom nav + FAB supaya selalu nempel di atas keyboard
-// (mengambang, tidak ketutup) — dihitung dari selisih tinggi viewport
-// sekarang dengan tinggi normal (baseline) saat halaman pertama dimuat.
-
-const baselineWindowHeight = window.innerHeight;
-
-function computeKeyboardHeight() {
-  if (window.visualViewport) {
-    return Math.max(0, window.innerHeight - window.visualViewport.height - window.visualViewport.offsetTop);
-  }
-  // Cadangan untuk browser tanpa visualViewport (atau yang tidak mengenali
-  // interactive-widget=overlays-content) — deteksi dari penyusutan
-  // window.innerHeight langsung dibanding tinggi normal saat halaman dimuat.
-  return Math.max(0, baselineWindowHeight - window.innerHeight);
-}
-
-function repositionForKeyboard() {
-  const keyboardHeight = computeKeyboardHeight();
-  const offset = keyboardHeight > 100 ? keyboardHeight : 0;
-  const tabsEl = document.querySelector(".tabs");
-  if (tabsEl) tabsEl.style.bottom = offset + "px";
-  const fabExport = document.getElementById("fab-export-journal");
-  const fabReset = document.getElementById("fab-reset-checklist");
-  const fabBottom = (offset > 0 ? offset + 82 : 82) + "px";
-  if (fabExport) fabExport.style.bottom = fabBottom;
-  if (fabReset) fabReset.style.bottom = fabBottom;
-}
-
+// Bottom nav SENGAJA dibiarkan diam di posisi fixed bawah (tanpa JS yang
+// coba menghitung/menggeser posisinya mengikuti keyboard) — mekanisme itu
+// terbukti tidak konsisten di berbagai browser/HP, jadi lebih stabil pakai
+// perilaku native browser apa adanya.
 if (window.visualViewport) {
   let lastViewportHeight = window.visualViewport.height;
 
@@ -1488,20 +1463,8 @@ if (window.visualViewport) {
     if (shrunk > 150) {
       scrollFocusedFieldIntoView(document.activeElement);
     }
-    repositionForKeyboard();
   });
 }
-
-// Jalur cadangan: selalu ikut dengarkan window.resize juga (biar tetap
-// bekerja di browser yang tidak dukung/mengenali visualViewport dengan
-// baik atau mengabaikan interactive-widget di meta viewport).
-window.addEventListener("resize", () => {
-  repositionForKeyboard();
-});
-
-// Pastikan posisi awal (saat load, keyboard pasti tertutup) diset ke 0
-// supaya tidak nyangkut kalau nilai awal salah hitung.
-repositionForKeyboard();
 
 /* ---------- INIT ---------- */
 renderChecklist();
