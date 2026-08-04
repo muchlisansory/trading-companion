@@ -1454,9 +1454,20 @@ document.addEventListener("focusout", (e) => {
 // (mengambang, tidak ketutup) — dihitung dari selisih tinggi viewport
 // sekarang dengan tinggi normal (baseline) saat halaman pertama dimuat.
 
+const baselineWindowHeight = window.innerHeight;
+
+function computeKeyboardHeight() {
+  if (window.visualViewport) {
+    return Math.max(0, window.innerHeight - window.visualViewport.height - window.visualViewport.offsetTop);
+  }
+  // Cadangan untuk browser tanpa visualViewport (atau yang tidak mengenali
+  // interactive-widget=overlays-content) — deteksi dari penyusutan
+  // window.innerHeight langsung dibanding tinggi normal saat halaman dimuat.
+  return Math.max(0, baselineWindowHeight - window.innerHeight);
+}
+
 function repositionForKeyboard() {
-  if (!window.visualViewport) return;
-  const keyboardHeight = Math.max(0, window.innerHeight - window.visualViewport.height - window.visualViewport.offsetTop);
+  const keyboardHeight = computeKeyboardHeight();
   const offset = keyboardHeight > 100 ? keyboardHeight : 0;
   const tabsEl = document.querySelector(".tabs");
   if (tabsEl) tabsEl.style.bottom = offset + "px";
@@ -1480,6 +1491,17 @@ if (window.visualViewport) {
     repositionForKeyboard();
   });
 }
+
+// Jalur cadangan: selalu ikut dengarkan window.resize juga (biar tetap
+// bekerja di browser yang tidak dukung/mengenali visualViewport dengan
+// baik atau mengabaikan interactive-widget di meta viewport).
+window.addEventListener("resize", () => {
+  repositionForKeyboard();
+});
+
+// Pastikan posisi awal (saat load, keyboard pasti tertutup) diset ke 0
+// supaya tidak nyangkut kalau nilai awal salah hitung.
+repositionForKeyboard();
 
 /* ---------- INIT ---------- */
 renderChecklist();
