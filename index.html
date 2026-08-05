@@ -1456,16 +1456,18 @@ document.addEventListener("focusout", (e) => {
 // saat scroll, karena itu justru bikin posisinya kelihatan goyang/tidak
 // stabil di HP asli).
 function positionTabsAboveKeyboard() {
-  if (!window.visualViewport) return;
-  const keyboardHeight = Math.max(0, window.innerHeight - window.visualViewport.height);
-  const offset = keyboardHeight > 100 ? keyboardHeight : 0;
+  // Bottom navigation harus selalu mengikuti viewport browser.
+  // Jangan menambahkan tinggi keyboard ke properti bottom karena pada
+  // browser mobile VisualViewport sudah menyesuaikan area yang terlihat.
+  // Offset tambahan menyebabkan nav melayang dan berubah posisi saat scroll.
   const tabsEl = document.querySelector(".tabs");
-  if (tabsEl) tabsEl.style.bottom = offset + "px";
+  if (tabsEl) tabsEl.style.bottom = "0px";
+
+  // FAB tetap berada di atas bottom navigation pada posisi normal.
   const fabExport = document.getElementById("fab-export-journal");
   const fabReset = document.getElementById("fab-reset-checklist");
-  const fabBottom = (offset > 0 ? offset + 82 : 82) + "px";
-  if (fabExport) fabExport.style.bottom = fabBottom;
-  if (fabReset) fabReset.style.bottom = fabBottom;
+  if (fabExport) fabExport.style.bottom = "82px";
+  if (fabReset) fabReset.style.bottom = "82px";
 }
 
 if (window.visualViewport) {
