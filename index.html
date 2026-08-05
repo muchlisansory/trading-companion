@@ -1444,30 +1444,32 @@ document.addEventListener("focusout", (e) => {
   }, 50);
 });
 
-// Reaksi lebih presisi: begitu keyboard software BENAR-BENAR muncul (area
-// layar menyusut signifikan), posisikan ulang field yang sedang aktif.
-// PENTING: scroll biasa di HP juga memicu event ini (address bar browser
-// collapse/muncul saat scroll) — makanya kita cek dulu penyusutannya cukup
-// besar (>150px, ciri khas keyboard) supaya tidak salah trigger saat scroll.
+// Reaksi begitu keyboard software muncul/hilang: posisikan bottom nav & FAB
+// supaya tetap menempel DI ATAS keyboard, bukan ikut tergeser ke bawah dan
+// hilang di balik keyboard (tombol simpan yang melayang di menu statistik
+// jadi tetap kelihatan selama keyboard terbuka).
 //
-// Bottom nav cuma punya 2 posisi stabil: nempel bawah (0px) saat keyboard
-// tertutup, atau nempel di atas keyboard saat terbuka — dihitung SEKALI
-// tiap kali status keyboard berubah (bukan terus-menerus dihitung ulang
-// saat scroll, karena itu justru bikin posisinya kelihatan goyang/tidak
-// stabil di HP asli).
+// window.visualViewport mewakili area layar yang BENAR-BENAR terlihat
+// (menyusut saat keyboard muncul), sedangkan elemen position:fixed secara
+// default tetap menempel ke bawah LAYOUT viewport penuh (yang sebagian
+// ketutup keyboard). Selisih antara innerHeight dan (visualViewport.height +
+// visualViewport.offsetTop) adalah tinggi area yang ketutup keyboard —
+// dipakai sebagai offset "bottom" supaya nav & FAB ikut naik ke atas
+// keyboard, dan turun lagi ke 0 saat keyboard ditutup.
 function positionTabsAboveKeyboard() {
-  // Bottom navigation harus selalu mengikuti viewport browser.
-  // Jangan menambahkan tinggi keyboard ke properti bottom karena pada
-  // browser mobile VisualViewport sudah menyesuaikan area yang terlihat.
-  // Offset tambahan menyebabkan nav melayang dan berubah posisi saat scroll.
   const tabsEl = document.querySelector(".tabs");
-  if (tabsEl) tabsEl.style.bottom = "0px";
-
-  // FAB tetap berada di atas bottom navigation pada posisi normal.
   const fabExport = document.getElementById("fab-export-journal");
   const fabReset = document.getElementById("fab-reset-checklist");
-  if (fabExport) fabExport.style.bottom = "82px";
-  if (fabReset) fabReset.style.bottom = "82px";
+
+  let keyboardHeight = 0;
+  if (window.visualViewport) {
+    const vv = window.visualViewport;
+    keyboardHeight = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+  }
+
+  if (tabsEl) tabsEl.style.bottom = keyboardHeight + "px";
+  if (fabExport) fabExport.style.bottom = (keyboardHeight + 82) + "px";
+  if (fabReset) fabReset.style.bottom = (keyboardHeight + 82) + "px";
 }
 
 if (window.visualViewport) {
@@ -1482,6 +1484,11 @@ if (window.visualViewport) {
     }
     positionTabsAboveKeyboard();
   });
+
+  // "scroll" pada visualViewport terpicu saat halaman ikut bergeser ketika
+  // keyboard terbuka (offsetTop berubah) — perlu diikuti juga supaya posisi
+  // nav & FAB tetap presisi menempel di atas keyboard, tidak goyang.
+  window.visualViewport.addEventListener("scroll", positionTabsAboveKeyboard);
 }
 
 positionTabsAboveKeyboard();
