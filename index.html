@@ -304,6 +304,7 @@ const ENTRY_ITEMS = [
   "Sudah ada Impulsif Candle atau pergerakan signifikan (IFC/IMB)?",
   "Inside bar / area SnR atau SnD sudah ditentukan?",
   "Sudah terjadi retracement / retest ke area tersebut?",
+  "Sudah mencapai Golden Rasio Fibonacci?",
   "Sudah ada konfirmasi (candle rejection / ChoCh & BoS)?",
   "RR minimal 1:1.5, maksimal 1:3?"
 ];
@@ -851,10 +852,10 @@ function renderJournal() {
           <option value="sell" ${journalForm.arah==="sell"?"selected":""}>Sell</option>
         </select>
       </div>
-      <div class="field"><label>Lot</label><input type="number" step="0.01" id="f-lot" value="${journalForm.lot}"></div>
-      <div class="field"><label>Harga Entry</label><input type="number" step="0.0001" id="f-entry" value="${journalForm.entry}"></div>
-      <div class="field"><label>Stop Loss</label><input type="number" step="0.0001" id="f-sl" value="${journalForm.sl}"></div>
-      <div class="field"><label>Take Profit</label><input type="number" step="0.0001" id="f-tp" value="${journalForm.tp}"></div>
+      <div class="field"><label>Lot</label><input type="text" inputmode="decimal" id="f-lot" value="${journalForm.lot}"></div>
+      <div class="field"><label>Harga Entry</label><input type="text" inputmode="decimal" id="f-entry" value="${journalForm.entry}"></div>
+      <div class="field"><label>Stop Loss</label><input type="text" inputmode="decimal" id="f-sl" value="${journalForm.sl}"></div>
+      <div class="field"><label>Take Profit</label><input type="text" inputmode="decimal" id="f-tp" value="${journalForm.tp}"></div>
       <div class="field"><label>Hasil</label>
         <select id="f-hasil">
           <option value="profit" ${journalForm.hasil==="profit"?"selected":""}>Profit</option>
@@ -862,7 +863,7 @@ function renderJournal() {
           <option value="be" ${journalForm.hasil==="be"?"selected":""}>Break Even</option>
         </select>
       </div>
-      <div class="field"><label>P/L ($)</label><input type="number" step="0.01" id="f-pl" value="${journalForm.pl}"></div>
+      <div class="field"><label>P/L ($)</label><input type="text" inputmode="decimal" id="f-pl" value="${journalForm.pl}"></div>
       <div class="field"><label>Link</label><input type="text" id="f-link" placeholder="https://www.tradingview.com/x/..." value="${journalForm.link || ''}"></div>
     </div>
     <div class="field"><label>Catatan (alasan entry, pelanggaran checklist, dsb.)</label><textarea id="f-catatan">${journalForm.catatan}</textarea></div>
@@ -874,10 +875,20 @@ function renderJournal() {
 
   el.innerHTML = html;
 
+  const NUMERIC_FIELDS = ["lot", "entry", "sl", "tp", "pl"];
+
   ["tanggal","pair","arah","lot","entry","sl","tp","hasil","pl","link","catatan"].forEach(field => {
     const node = document.getElementById("f-" + field);
     if (!node) return;
     node.addEventListener("input", () => {
+      // Keyboard angka di sebagian HP (locale Indonesia) pakai koma sebagai
+      // tanda desimal -- anggap koma sama dengan titik supaya kolom Lot,
+      // Harga Entry, SL, TP, dan P/L konsisten pakai titik.
+      if (NUMERIC_FIELDS.includes(field) && node.value.includes(",")) {
+        const pos = node.selectionStart;
+        node.value = node.value.replace(",", ".");
+        node.setSelectionRange(pos, pos);
+      }
       if (field === "pair") {
         const pos = node.selectionStart;
         node.value = node.value.toUpperCase();
@@ -885,9 +896,21 @@ function renderJournal() {
       }
       if (field === "pl") {
         const hasilNow = document.getElementById("f-hasil").value;
-        const abs = Math.abs(parseFloat(node.value) || 0);
-        if (hasilNow === "loss" && abs > 0) node.value = "-" + abs;
-        else if (hasilNow === "profit" && abs > 0) node.value = String(abs);
+        const pos = node.selectionStart;
+        // Ambil teks apa adanya, cuma buang tanda minus di depan (kalau ada)
+        // -- TIDAK diproses lewat parseFloat/String, supaya titik/koma yang
+        // baru setengah jalan diketik (mis. "12.") tidak ikut kehapus.
+        const raw = node.value.replace(/^-/, "");
+        const hasValue = raw !== "" && parseFloat(raw) !== 0;
+        const newValue = (hasilNow === "loss" && hasValue) ? "-" + raw : raw;
+        if (newValue !== node.value) {
+          // Panjang teks bisa berubah 1 karakter karena tanda minus
+          // ditambah/dibuang -- posisi kursor digeser mengikuti supaya
+          // kursor tidak lompat ke ujung teks.
+          const shift = newValue.length - node.value.length;
+          node.value = newValue;
+          node.setSelectionRange(pos + shift, pos + shift);
+        }
       }
       journalForm[field] = node.value;
     });
@@ -1257,7 +1280,7 @@ function renderCalculator() {
         <label style="margin-bottom:0;">Modal (${currencySymbol()})</label>
         ${currentTotalSaldo > 0 ? `<button type="button" id="btn-sync-saldo" style="background:none;border:none;color:var(--accent2);font-size:11px;cursor:pointer;padding:0;text-decoration:underline;">↺ Pakai Total Saldo (${formatMoney(currentTotalSaldo)})</button>` : ''}
       </div>
-      <input type="number" id="c-modal" value="${calcState.modal}">
+      <input type="text" inputmode="decimal" id="c-modal" value="${calcState.modal}">
     </div>
     <div class="field"><label>Pasangan / Instrumen</label>
       <div class="toggle">
@@ -1281,7 +1304,7 @@ function renderCalculator() {
           🔒 Satuan: ${calcState.slUnit === 'dollar' ? 'Dollar ($)' : 'Pips'} — otomatis
         </span>
       </div>
-      <input type="number" id="c-sl" value="${calcState.sl}" step="any">
+      <input type="text" inputmode="decimal" id="c-sl" value="${calcState.sl}">
       <div style="font-size:11px;color:var(--muted);margin-top:4px;" id="c-sl-hint">
         ${getSlHint(calcState.pair, calcState.slUnit)}
       </div>
@@ -1317,12 +1340,24 @@ function renderCalculator() {
   }
 
   document.getElementById("c-modal").addEventListener("input", (e) => {
+    // Keyboard angka di sebagian HP (locale Indonesia) pakai koma sebagai
+    // tanda desimal -- anggap koma sama dengan titik supaya konsisten.
+    if (e.target.value.includes(",")) {
+      const pos = e.target.selectionStart;
+      e.target.value = e.target.value.replace(",", ".");
+      e.target.setSelectionRange(pos, pos);
+    }
     calcState.modal = parseFloat(e.target.value) || 0;
     saveJSON("calc-modal", calcState.modal);
     updateCalcResults();
   });
 
   document.getElementById("c-sl").addEventListener("input", (e) => {
+    if (e.target.value.includes(",")) {
+      const pos = e.target.selectionStart;
+      e.target.value = e.target.value.replace(",", ".");
+      e.target.setSelectionRange(pos, pos);
+    }
     calcState.sl = parseFloat(e.target.value) || 0;
     saveJSON("calc-sl", calcState.sl);
     updateCalcResults();
