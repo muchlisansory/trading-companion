@@ -976,9 +976,9 @@ function renderStatistik() {
     <div class="grid2">
       <div>
         <div class="stat-label">Saldo Awal (${currencySymbol()})</div>
-        <input type="number" id="f-saldo-awal" step="0.01" value="${saldoAwal}"
+        <input type="text" inputmode="decimal" id="f-saldo-awal" value="${saldoAwal}"
           style="width:100%;padding:8px 10px;font-family:inherit;font-size:16px;font-weight:700;
-            background:var(--input-bg);color:var(--text);border:1px solid var(--line);margin-top:2px;">
+           background:var(--input-bg);color:var(--text);border:1px solid var(--line);margin-top:2px;">
       </div>
       <div>
         <div class="stat-label">Total Saldo</div>
@@ -1074,6 +1074,12 @@ function renderStatistik() {
   });
 
   document.getElementById("f-saldo-awal").addEventListener("input", (e) => {
+  // Keyboard angka di sebagian HP (locale Indonesia) pakai koma sebagai
+  // tanda desimal -- anggap koma sama dengan titik supaya tetap kebaca
+  // benar & tetap konsisten pakai titik seperti tampilan Total Saldo.
+    if (e.target.value.includes(",")) {
+    e.target.value = e.target.value.replace(",", ".");
+    }
     saldoAwal = parseFloat(e.target.value) || 0;
     saveJSON("saldo-awal", saldoAwal);
 
