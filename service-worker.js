@@ -24,6 +24,26 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("fetch", (event) => {
+  // Khusus untuk index.html / navigasi halaman: coba ambil versi TERBARU
+  // dari internet dulu (network-first), supaya update kode selalu langsung
+  // kepakai begitu online -- tidak perlu nunggu service worker ganti versi.
+  // Salinan hasil fetch disimpan lagi ke cache, supaya kalau nanti offline
+  // masih ada cadangan untuk dipakai.
+  if (event.request.mode === "navigate" || event.request.destination === "document") {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+          return response;
+        })
+        .catch(() => caches.match(event.request))
+    );
+    return;
+  }
+
+  // Aset lain (icon, manifest, dll) tetap cache-first seperti semula --
+  // jarang berubah, jadi lebih hemat kuota & lebih cepat dimuat.
   event.respondWith(
     caches.match(event.request).then((cached) => cached || fetch(event.request))
   );
