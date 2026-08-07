@@ -1442,7 +1442,7 @@ document.addEventListener("touchend", (e) => {
   const dy = e.changedTouches[0].clientY - swipeStartY;
   const absDx = Math.abs(dx), absDy = Math.abs(dy);
 
-  const SWIPE_MIN_DISTANCE = 55;
+  const SWIPE_MIN_DISTANCE = 65;
   if (absDx < SWIPE_MIN_DISTANCE || absDx < absDy * 1.1) return;
 
   const idx = tabs.indexOf(currentTab);
